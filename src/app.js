@@ -1,7 +1,7 @@
 // Draws the window from the data in store.js and reacts to clicks.
 
 import {
-  load, save, addProject, addSession, removeSession, removeProject, addMessage, setSidebarWidth,
+  load, save, addProject, addSession, removeSession, removeProject, addMessage, setSidebarWidth, SIDEBAR_MIN,
 } from './store.js';
 
 // Tauri exposes its API on window.__TAURI__ ("withGlobalTauri" in tauri.conf.json).
@@ -205,26 +205,45 @@ document.addEventListener('keydown', (event) => {
 });
 
 // Dragging the sidebar's edge. The sidebar starts at the window's left edge, so
-// its new width is simply how far the pointer is from the left.
+// its width is simply how far the pointer is from the left. Below the minimum
+// width it stops shrinking and slides off the edge with the pointer instead;
+// letting go past the halfway point hides it. While hidden, the edge sits at the
+// window's left side, so the same drag pulls the sidebar back out.
 resizer.addEventListener('pointerdown', (down) => {
   resizer.setPointerCapture(down.pointerId); // keep receiving moves even if the pointer leaves the thin edge
+  let x = down.clientX;
   const drag = (move) => {
-    setSidebarWidth(state, move.clientX);
+    x = move.clientX;
+    state.sidebar.hidden = false;
+    setSidebarWidth(state, x);
     applySidebar();
+    document.body.classList.add('instant'); // follow the pointer exactly, with no animation lag
+    const shift = Math.max(-SIDEBAR_MIN, Math.min(0, x - SIDEBAR_MIN));
+    document.documentElement.style.setProperty('--sidebar-shift', `${shift}px`);
   };
   resizer.addEventListener('pointermove', drag);
   resizer.addEventListener('pointerup', () => {
     resizer.removeEventListener('pointermove', drag);
+    const dragged = document.body.classList.contains('instant');
+    document.body.classList.remove('instant');
+    document.documentElement.style.removeProperty('--sidebar-shift');
+    if (dragged) state.sidebar.hidden = x < SIDEBAR_MIN / 2;
+    applySidebar(); // animates from where it was let go to fully hidden or fully shown
     save(localStorage, state);
   }, { once: true });
 });
 
 resizer.addEventListener('dblclick', () => {
+  state.sidebar.hidden = false;
   setSidebarWidth(state, 280);
   applySidebar();
   save(localStorage, state);
 });
 
+// Start in the saved layout without animating into it.
+document.body.classList.add('instant');
 applySidebar();
+requestAnimationFrame(() => document.body.classList.remove('instant'));
+
 drawSidebar();
 drawChat();

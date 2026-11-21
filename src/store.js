@@ -14,9 +14,12 @@ export function newState() {
   };
 }
 
+export const SIDEBAR_MIN = 220;
+export const SIDEBAR_MAX = 480;
+
 // The sidebar can be dragged wider or narrower, within sensible limits.
 export function setSidebarWidth(state, width) {
-  state.sidebar.width = Math.round(Math.min(480, Math.max(220, width)));
+  state.sidebar.width = Math.round(Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, width)));
 }
 
 export function load(storage) {
