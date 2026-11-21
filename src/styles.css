@@ -97,8 +97,19 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 
 /* Hide/show button, fixed beside the red, yellow and green window buttons */
 #toggle-sidebar { position: fixed; top: 2px; left: 78px; z-index: 2; }
-body.sidebar-hidden #sidebar,
+
+/* Hiding slides the sidebar off the left edge. A negative margin (rather than
+   display: none) can be animated, and lets the chat grow smoothly into the space. */
+#sidebar { transition: margin-left 240ms var(--ease), visibility 0s; }
+body.sidebar-hidden #sidebar {
+  margin-left: calc(-1 * var(--sidebar-width, 280px));
+  visibility: hidden; /* once it is off screen, keep it out of keyboard focus too */
+  transition: margin-left 240ms var(--ease), visibility 0s 240ms; /* hide only after the slide ends */
+}
 body.sidebar-hidden #resizer { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  #sidebar, body.sidebar-hidden #sidebar { transition: none; }
+}
 
 /* A thin strip over the sidebar's right border that can be dragged */
 #resizer {
