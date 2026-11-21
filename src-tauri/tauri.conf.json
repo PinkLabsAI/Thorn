@@ -11,8 +11,8 @@
     "windows": [
       {
         "title": "Thorn",
-        "width": 1100,
-        "height": 720,
+        "width": 1200,
+        "height": 800,
         "minWidth": 720,
         "minHeight": 480,
         "titleBarStyle": "Overlay",

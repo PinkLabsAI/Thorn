@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   STORAGE_KEY, newState, load, addProject, addSession, removeSession, removeProject, addMessage,
+  setSidebarWidth,
 } from '../src/store.js';
 
 test('a project is named after its folder', () => {
@@ -54,6 +55,19 @@ test('only the first message names the session', () => {
 
   assert.equal(session.title, 'Explain closures');
   assert.equal(session.messages.length, 2);
+});
+
+test('the sidebar width stays between its limits', () => {
+  const state = newState();
+
+  setSidebarWidth(state, 50);
+  assert.equal(state.sidebar.width, 220);
+
+  setSidebarWidth(state, 2000);
+  assert.equal(state.sidebar.width, 480);
+
+  setSidebarWidth(state, 333.4);
+  assert.equal(state.sidebar.width, 333);
 });
 
 test('load starts fresh when saved data is missing or unreadable', () => {

@@ -10,7 +10,13 @@ export function newState() {
     openSessionId: null,
     show: 'all', // sidebar filter: 'all' or 'projects'
     closed: {}, // dropdown key -> true when the user collapsed it
+    sidebar: { width: 280, hidden: false },
   };
+}
+
+// The sidebar can be dragged wider or narrower, within sensible limits.
+export function setSidebarWidth(state, width) {
+  state.sidebar.width = Math.round(Math.min(480, Math.max(220, width)));
 }
 
 export function load(storage) {

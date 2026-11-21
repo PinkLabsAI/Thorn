@@ -1,7 +1,7 @@
 // Draws the window from the data in store.js and reacts to clicks.
 
 import {
-  load, save, addProject, addSession, removeSession, removeProject, addMessage,
+  load, save, addProject, addSession, removeSession, removeProject, addMessage, setSidebarWidth,
 } from './store.js';
 
 // Tauri exposes its API on window.__TAURI__ ("withGlobalTauri" in tauri.conf.json).
@@ -11,6 +11,7 @@ const { open, confirm } = window.__TAURI__.dialog;
 const state = load(localStorage);
 const sidebar = document.querySelector('#sidebar');
 const chat = document.querySelector('#chat');
+const resizer = document.querySelector('#resizer');
 
 // Folder names and messages come from outside the code and are placed into
 // innerHTML, so anything that looks like HTML in them has to be neutralised.
@@ -89,8 +90,9 @@ function drawSidebar() {
 
   // data-tauri-drag-region lets you move the window by dragging that element.
   sidebar.innerHTML = `
-    <header class="titlebar" data-tauri-drag-region>
-      <span class="name" data-tauri-drag-region>Thorn</span>
+    <div class="titlebar" data-tauri-drag-region></div>
+    <header class="brand">
+      <span class="name">Thorn</span>
       ${dots('View options', `<span class="menu-title">Show</span>
         ${showOption('all', 'All sessions')}
         ${showOption('projects', 'Projects only')}`)}
@@ -103,15 +105,16 @@ function drawSidebar() {
 function drawChat() {
   const session = state.sessions.find((s) => s.id === state.openSessionId);
   if (!session) {
-    chat.innerHTML = `<header class="titlebar" data-tauri-drag-region></header>
+    chat.innerHTML = `<div class="titlebar" data-tauri-drag-region></div>
       <div class="welcome"><h1>Thorn</h1>
       <p>Start a session to talk with the model, or add a project to work on a folder</p></div>`;
     return;
   }
   const project = state.projects.find((p) => p.id === session.projectId);
   chat.innerHTML = `
-    <header class="titlebar" data-tauri-drag-region>
-      <span class="text" data-tauri-drag-region>${safe(session.title)}</span>
+    <div class="titlebar" data-tauri-drag-region></div>
+    <header class="chat-title">
+      <span class="text">${safe(session.title)}</span>
       ${project ? `<span class="tag">${safe(project.name)}</span>` : ''}
     </header>
     <ol class="messages">${session.messages.map((m) => `<li>${safe(m.text)}</li>`).join('')}</ol>
@@ -121,6 +124,13 @@ function drawChat() {
       <button>Send</button>
     </form>`;
   chat.querySelector('input').focus();
+}
+
+// The sidebar's width and whether it is hidden are plain CSS: a variable and a
+// class. Nothing needs redrawing when they change.
+function applySidebar() {
+  document.documentElement.style.setProperty('--sidebar-width', `${state.sidebar.width}px`);
+  document.body.classList.toggle('sidebar-hidden', state.sidebar.hidden);
 }
 
 function closeMenus(except = null) {
@@ -145,6 +155,10 @@ document.addEventListener('click', async (event) => {
   }
 
   const openBefore = state.openSessionId;
+  if (action === 'toggle-sidebar') {
+    state.sidebar.hidden = !state.sidebar.hidden;
+    applySidebar();
+  }
   if (action === 'show') state.show = id;
   if (action === 'open-session') state.openSessionId = id;
   if (action === 'new-session') addSession(state, id ?? null);
@@ -187,7 +201,30 @@ document.addEventListener('submit', (event) => {
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') closeMenus();
+  if (event.metaKey && event.key === 'b') document.querySelector('#toggle-sidebar').click(); // Cmd+B
 });
 
+// Dragging the sidebar's edge. The sidebar starts at the window's left edge, so
+// its new width is simply how far the pointer is from the left.
+resizer.addEventListener('pointerdown', (down) => {
+  resizer.setPointerCapture(down.pointerId); // keep receiving moves even if the pointer leaves the thin edge
+  const drag = (move) => {
+    setSidebarWidth(state, move.clientX);
+    applySidebar();
+  };
+  resizer.addEventListener('pointermove', drag);
+  resizer.addEventListener('pointerup', () => {
+    resizer.removeEventListener('pointermove', drag);
+    save(localStorage, state);
+  }, { once: true });
+});
+
+resizer.addEventListener('dblclick', () => {
+  setSidebarWidth(state, 280);
+  applySidebar();
+  save(localStorage, state);
+});
+
+applySidebar();
 drawSidebar();
 drawChat();

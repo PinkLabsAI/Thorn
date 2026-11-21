@@ -6,7 +6,13 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Sits beside the Mac window buttons whether the sidebar is shown or hidden -->
+  <button id="toggle-sidebar" class="icon" data-action="toggle-sidebar" aria-label="Toggle sidebar" title="Toggle sidebar (⌘B)">
+    <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+  </button>
   <nav id="sidebar" aria-label="Projects and sessions"></nav>
+  <!-- Drag this edge to resize the sidebar; double-click to reset it -->
+  <div id="resizer" role="separator" aria-orientation="vertical" aria-label="Resize sidebar"></div>
   <main id="chat"></main>
   <script type="module" src="app.js"></script>
 </body>
