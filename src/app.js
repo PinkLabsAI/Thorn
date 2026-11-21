@@ -18,10 +18,20 @@ function safe(text) {
   return text.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
 }
 
+// Line icons from the lucide set (lucide.dev), drawn inline so the app needs no
+// icon files. Every icon is the same size and takes the colour of its text.
+const ICONS = {
+  plus: '<path d="M5 12h14M12 5v14"/>',
+  dots: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+  chevron: '<path d="m9 18 6-6-6-6"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+};
+const icon = (name) => `<svg class="i ${name}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
+
 // A three-dot button followed by its menu. The menu starts hidden.
 function dots(label, menuItems) {
   return `<span class="dots">
-    <button class="icon" data-action="menu" aria-haspopup="menu" aria-label="${label}">⋯</button>
+    <button class="icon" data-action="menu" aria-haspopup="menu" aria-label="${label}">${icon('dots')}</button>
     <span class="menu" role="menu" hidden>${menuItems}</span>
   </span>`;
 }
@@ -51,21 +61,22 @@ function sessionRow(session, projectTag = '') {
 function projectRow(project) {
   const sessions = state.sessions.filter((session) => session.projectId === project.id);
   const summary = `<span class="row" title="${safe(project.path)}">
-    <span class="label"><span class="chevron"></span><span class="text">${safe(project.name)}</span></span>
+    <span class="label">${icon('chevron')}<span class="text">${safe(project.name)}</span></span>
     <button class="icon" data-action="new-session" data-id="${project.id}"
-      aria-label="New session in ${safe(project.name)}">+</button>
+      aria-label="New session in ${safe(project.name)}">${icon('plus')}</button>
     ${dots('Project options', deleteItem('delete-project', project.id))}
   </span>`;
   return `<li>${dropdown(project.id, summary, sessions.map((s) => sessionRow(s)).join(''), 'No sessions yet')}</li>`;
 }
 
-function heading(text) {
-  return `<span class="row heading"><span class="label"><span class="chevron"></span>${text}</span></span>`;
+// A section title. `addButton` is an optional icon button on the right.
+function heading(text, addButton = '') {
+  return `<span class="row heading"><span class="label">${icon('chevron')}${text}</span>${addButton}</span>`;
 }
 
 function showOption(value, text) {
   return `<button role="menuitemradio" aria-checked="${state.show === value}"
-    data-action="show" data-id="${value}">${text}</button>`;
+    data-action="show" data-id="${value}">${text}${state.show === value ? icon('check') : ''}</button>`;
 }
 
 function drawSidebar() {
@@ -73,6 +84,8 @@ function drawSidebar() {
   // "All sessions" lists every session; ones inside a project carry its name as a tag.
   const everySession = state.sessions.map((session) =>
     sessionRow(session, session.projectId ? `<span class="tag">${safe(projectName(session.projectId))}</span>` : ''));
+
+  const addProjectButton = `<button class="icon" data-action="new-project" aria-label="Add project">${icon('plus')}</button>`;
 
   // data-tauri-drag-region lets you move the window by dragging that element.
   sidebar.innerHTML = `
@@ -82,9 +95,8 @@ function drawSidebar() {
         ${showOption('all', 'All sessions')}
         ${showOption('projects', 'Projects only')}`)}
     </header>
-    <button class="row label" data-action="new-session"><span class="plus" aria-hidden="true">+</span>New session</button>
-    <button class="row label" data-action="new-project"><span class="plus" aria-hidden="true">+</span>New project</button>
-    ${dropdown('projects', heading('Projects'), state.projects.map(projectRow).join(''), 'No projects yet')}
+    <button class="row label" data-action="new-session">${icon('plus')}New session</button>
+    ${dropdown('projects', heading('Projects', addProjectButton), state.projects.map(projectRow).join(''), 'No projects yet')}
     ${state.show === 'all' ? dropdown('sessions', heading('Sessions'), everySession.join(''), 'No sessions yet') : ''}`;
 }
 
@@ -93,7 +105,7 @@ function drawChat() {
   if (!session) {
     chat.innerHTML = `<header class="titlebar" data-tauri-drag-region></header>
       <div class="welcome"><h1>Thorn</h1>
-      <p>Start a session to talk with the model, or a project to work on a folder.</p></div>`;
+      <p>Start a session to talk with the model, or add a project to work on a folder</p></div>`;
     return;
   }
   const project = state.projects.find((p) => p.id === session.projectId);
@@ -103,7 +115,7 @@ function drawChat() {
       ${project ? `<span class="tag">${safe(project.name)}</span>` : ''}
     </header>
     <ol class="messages">${session.messages.map((m) => `<li>${safe(m.text)}</li>`).join('')}</ol>
-    <p class="notice">No model is connected yet, so messages are saved but not answered.</p>
+    <p class="notice">No model is connected yet, so messages are saved but not answered</p>
     <form class="composer">
       <input name="text" placeholder="Message Thorn" autocomplete="off" aria-label="Message">
       <button>Send</button>

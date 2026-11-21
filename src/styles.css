@@ -1,28 +1,38 @@
+/* Colours are one grey ramp with three text roles and one accent.
+   Spacing sits on a 4px grid, and rows share one height. */
 :root {
+  --sidebar: #fafafa;
   --window: #ffffff;
-  --sidebar: #f5f5f6;
-  --hover: #ebebed;
-  --current: #e1e1e4;
-  --line: #e1e1e4;
-  --ink: #1d1d1f;
-  --ink-soft: #6e6e73;
-  --danger: #d70015;
-  --focus: #ff4d8d; /* PinkLabs pink */
-  --titlebar: 28px; /* same height as a Mac title bar, so it lines up with the window buttons */
+  --raised: #ffffff; /* menus */
+  --ink: #171717; /* primary text */
+  --ink-2: #525252; /* secondary text */
+  --ink-3: #737373; /* muted text and icons */
+  --hairline: rgb(23 23 23 / 0.08);
+  --hover: rgb(23 23 23 / 0.04);
+  --current: rgb(23 23 23 / 0.08);
+  --danger: #dc2626;
+  --accent: #ff4d8d; /* PinkLabs pink, kept for the keyboard focus ring only */
+  --float: 0 8px 24px rgb(0 0 0 / 0.06);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --row: 32px;
+  --titlebar: 28px; /* height of a Mac title bar, so it lines up with the window buttons */
   color-scheme: light dark;
 }
 
 /* Follows the Mac's Light/Dark appearance setting */
 @media (prefers-color-scheme: dark) {
   :root {
-    --window: #1c1a1e;
-    --sidebar: #252227;
-    --hover: #322e35;
-    --current: #3d3840;
-    --line: #3d3840;
-    --ink: #f4f2f5;
-    --ink-soft: #a99fac;
-    --danger: #ff6961;
+    --sidebar: #0f0f10;
+    --window: #141415;
+    --raised: #232325;
+    --ink: #ededed;
+    --ink-2: #a1a1a6;
+    --ink-3: #85858b;
+    --hairline: rgb(237 237 237 / 0.08);
+    --hover: rgb(237 237 237 / 0.04);
+    --current: rgb(237 237 237 / 0.08);
+    --danger: #e5484d;
+    --float: none; /* in the dark, depth comes from the lighter surface, not a shadow */
   }
 }
 
@@ -33,7 +43,7 @@ body {
   height: 100vh;
   display: flex;
   overflow: hidden; /* the panes scroll, the window does not */
-  font: 13px/1.4 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font: 14px/20px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   color: var(--ink);
   background: var(--window);
 }
@@ -41,7 +51,19 @@ body {
 button, input { font: inherit; color: inherit; }
 button { border: 0; padding: 0; background: none; text-align: left; }
 ul, ol { margin: 0; padding: 0; list-style: none; }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* One icon size and stroke everywhere; colour comes from the text around it */
+.i {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 /* The window has no system title bar ("titleBarStyle": "Overlay"), so each pane
    draws its own strip at the top. Dragging a strip moves the window. */
@@ -51,6 +73,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   display: flex;
   align-items: center;
   gap: 8px;
+  font-weight: 500;
 }
 
 /* ---------- Sidebar ---------- */
@@ -61,7 +84,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   padding: 0 8px 8px;
   overflow-y: auto;
   background: var(--sidebar);
-  border-right: 1px solid var(--line);
+  border-right: 1px solid var(--hairline);
   /* App chrome should not highlight like text on a web page */
   user-select: none;
   -webkit-user-select: none;
@@ -69,111 +92,109 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 
 #sidebar .titlebar {
-  padding-left: 78px; /* clears the red, yellow and green window buttons */
+  padding-left: 76px; /* clears the red, yellow and green window buttons */
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
-.name { font-weight: 600; }
 
 .row {
   display: flex;
   align-items: center;
-  min-height: 28px;
-  border-radius: 6px;
+  height: var(--row);
+  border-radius: 8px;
+  transition: background-color 150ms var(--ease);
 }
 .row:hover { background: var(--hover); }
 .row[aria-current="true"] { background: var(--current); }
+li + li { margin-top: 2px; }
 
 .label {
   flex: 1;
   min-width: 0; /* lets long names shrink and get "…" instead of pushing buttons out */
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 28px;
+  gap: 8px;
+  height: var(--row);
   padding: 0 8px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 button.row.label { width: 100%; flex: none; }
+.label > .i { color: var(--ink-3); }
 .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.plus { width: 12px; text-align: center; color: var(--ink-soft); }
 
-details { margin-top: 12px; }
+/* Dropdowns. A section sits further from the one above than from its own rows. */
+details { margin-top: 24px; }
 li > details { margin-top: 0; }
 summary { list-style: none; } /* hide the browser's own triangle... */
 summary::-webkit-details-marker { display: none; }
-details ul ul { padding-left: 14px; }
+summary + ul { margin-top: 2px; }
+details ul ul { padding-left: 24px; } /* lines sessions up under the project's name */
 
-.heading { color: var(--ink-soft); font-size: 11px; font-weight: 600; }
-.empty-row { padding: 5px 8px; color: var(--ink-soft); }
+/* ...and use the chevron icon instead: right when closed, down when open */
+.chevron { transition: transform 150ms var(--ease); }
+details[open] > summary .chevron { transform: rotate(90deg); }
 
-/* ...and draw our own arrow: right when closed, down when open */
-.chevron {
-  flex: none;
-  width: 5px;
-  height: 5px;
-  margin: 0 3px 0 4px;
-  border-right: 1.5px solid var(--ink-soft);
-  border-bottom: 1.5px solid var(--ink-soft);
-  transform: rotate(-45deg);
-  transition: transform 120ms;
-}
-details[open] > summary .chevron { transform: rotate(45deg); }
+.heading { color: var(--ink-2); font-size: 12px; line-height: 16px; }
+.heading > .icon { margin-right: 4px; } /* same column as the three dots below it */
+.empty-row { height: var(--row); padding: 0 8px; display: flex; align-items: center; color: var(--ink-3); }
 
 .tag {
   flex: none;
   margin-left: auto;
-  padding: 0 6px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--ink-soft);
-  font-size: 11px;
+  padding: 0 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 400;
 }
 
 .icon {
   flex: none;
   width: 24px;
   height: 24px;
-  border-radius: 5px;
-  color: var(--ink-soft);
-  text-align: center;
-  font-size: 15px;
-  line-height: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--ink-3);
+  transition: background-color 150ms var(--ease), color 150ms var(--ease);
 }
 .icon:hover { background: var(--current); color: var(--ink); }
 
 /* ---------- Three-dot menus ---------- */
 
-.dots { position: relative; flex: none; margin-right: 2px; }
+.dots { position: relative; flex: none; margin: 0 4px; }
+.titlebar .dots { margin-right: 4px; }
 
 .menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   right: 0;
   z-index: 1;
-  min-width: 150px;
+  min-width: 160px;
   padding: 4px;
-  background: var(--window);
-  border: 1px solid var(--line);
+  background: var(--raised);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
-  box-shadow: 0 6px 20px rgb(0 0 0 / 0.15);
+  box-shadow: var(--float);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink);
 }
 .menu:not([hidden]) { display: block; }
 .menu button {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   width: 100%;
-  height: 26px;
+  height: 28px;
   padding: 0 8px;
-  border-radius: 5px;
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--ink);
+  border-radius: 4px; /* menu radius 8 minus its padding 4 */
+  transition: background-color 150ms var(--ease);
 }
 .menu button:hover { background: var(--hover); }
 .menu .danger { color: var(--danger); }
-.menu-title { display: block; padding: 3px 8px; color: var(--ink-soft); font-size: 11px; font-weight: 400; }
-[aria-checked="true"]::after { content: "✓"; margin-left: auto; }
+.menu-title { display: block; padding: 4px 8px; color: var(--ink-3); font-size: 12px; line-height: 16px; }
 
 /* ---------- Chat pane ---------- */
 
@@ -185,49 +206,49 @@ details[open] > summary .chevron { transform: rotate(45deg); }
 }
 
 #chat .titlebar {
-  padding: 0 20px;
-  font-weight: 600;
+  padding: 0 24px;
   user-select: none;
   -webkit-user-select: none;
   cursor: default;
 }
-#chat .tag { margin-left: 0; font-weight: 400; }
+#chat .tag { margin-left: 0; }
 
-.welcome { margin: auto; padding-bottom: var(--titlebar); text-align: center; color: var(--ink-soft); }
-.welcome h1 { margin: 0 0 4px; font-size: 20px; font-weight: 600; color: var(--ink); }
+.welcome { margin: auto; padding-bottom: var(--titlebar); text-align: center; color: var(--ink-2); }
+.welcome h1 { margin: 0 0 4px; font-size: 20px; line-height: 28px; font-weight: 500; color: var(--ink); }
 .welcome p { margin: 0; }
 
 .messages {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 20px;
+  padding: 16px 24px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--hairline);
 }
 .messages li {
   align-self: flex-end;
   max-width: 70%;
-  padding: 7px 12px;
-  border-radius: 14px;
-  background: var(--hover);
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--current);
   overflow-wrap: anywhere;
 }
 
-.notice { margin: 0; padding: 0 20px 8px; color: var(--ink-soft); font-size: 11px; }
+.notice { margin: 0; padding: 0 24px 8px; color: var(--ink-3); font-size: 12px; line-height: 16px; }
 
-.composer { display: flex; gap: 8px; padding: 0 20px 20px; }
+.composer { display: flex; gap: 8px; padding: 0 24px 24px; }
 .composer input {
   flex: 1;
-  height: 34px;
+  height: 36px;
   padding: 0 12px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
   background: var(--window);
 }
 .composer button {
-  padding: 0 14px;
+  height: 36px;
+  padding: 0 16px;
   border-radius: 8px;
   background: var(--ink);
   color: var(--window);

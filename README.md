@@ -28,3 +28,7 @@ The first run compiles the Rust side and takes a few minutes. After that, change
 - `src-tauri/src/lib.rs`: the Rust entry point. It starts the app and loads the dialog plugin.
 
 Projects and sessions are saved in the app's own `localStorage`, on this Mac only.
+
+## Design
+
+The look follows the [unslop](https://github.com/heydamir/unslop) design guidelines by Damir Sokolovsky: one grey ramp with three text roles, spacing on a 4px grid, one line-icon set ([lucide](https://lucide.dev)) at one size, and weights 400 and 500 only.
