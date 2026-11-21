@@ -1,8 +1,11 @@
 // Draws the window from the data in store.js and reacts to clicks.
 
 import {
-  load, save, addProject, addSession, removeSession, removeProject, addMessage, setSidebarWidth, SIDEBAR_MIN,
+  load, save, addProject, addSession, removeSession, removeProject, addMessage, addReply, removeLastReply,
+  setSidebarWidth, SIDEBAR_MIN,
 } from './store.js';
+import { drawReply, playReply } from './reply.js';
+import { sampleReply } from './sample.js';
 
 // Tauri exposes its API on window.__TAURI__ ("withGlobalTauri" in tauri.conf.json).
 // `open` shows the Mac folder picker and `confirm` a Mac confirmation dialog.
@@ -12,6 +15,7 @@ const state = load(localStorage);
 const sidebar = document.querySelector('#sidebar');
 const chat = document.querySelector('#chat');
 const resizer = document.querySelector('#resizer');
+let playing = null; // the reply that is streaming in right now, if any
 
 // Folder names and messages come from outside the code and are placed into
 // innerHTML, so anything that looks like HTML in them has to be neutralised.
@@ -103,6 +107,8 @@ function drawSidebar() {
 }
 
 function drawChat() {
+  playing?.stop(); // the chat is about to be replaced, so a reply still arriving has nowhere to go
+  playing = null;
   const session = state.sessions.find((s) => s.id === state.openSessionId);
   if (!session) {
     chat.innerHTML = `<div class="titlebar" data-tauri-drag-region></div>
@@ -117,13 +123,54 @@ function drawChat() {
       <span class="text">${safe(session.title)}</span>
       ${project ? `<span class="tag">${safe(project.name)}</span>` : ''}
     </header>
-    <ol class="messages">${session.messages.map((m) => `<li>${safe(m.text)}</li>`).join('')}</ol>
-    <p class="notice">No model is connected yet, so messages are saved but not answered</p>
+    <ol class="messages">${session.messages.map((m) =>
+      (m.from === 'user' ? `<li>${safe(m.text)}</li>` : '<li class="reply"></li>')).join('')}</ol>
+    <p class="notice">No model is connected yet, so every reply is the same scripted sample</p>
     <form class="composer">
       <input name="text" placeholder="Message Thorn" autocomplete="off" aria-label="Message">
       <button>Send</button>
     </form>`;
+  // Replies are built from elements rather than text, so they fill their <li> after it exists
+  const replies = session.messages.filter((m) => m.from === 'assistant');
+  chat.querySelectorAll('.reply').forEach((li, i) => {
+    const isLast = replies[i] === session.messages.at(-1); // only the latest reply can be retried
+    drawReply(li, replies[i], isLast ? () => retry(session) : null);
+  });
+  const list = chat.querySelector('.messages');
+  list.scrollTop = list.scrollHeight;
   chat.querySelector('input').focus();
+}
+
+// Streams a reply to the session's latest message into the open chat.
+function reply(session) {
+  const list = chat.querySelector('.messages');
+  const li = document.createElement('li');
+  li.className = 'reply';
+  list.append(li);
+  // Keep the newest words in view as the reply grows, unless the reader has scrolled up
+  const stick = () => {
+    if (list.scrollHeight - list.scrollTop - list.clientHeight < 200) list.scrollTop = list.scrollHeight;
+  };
+  const follow = new ResizeObserver(stick); // runs whenever the reply changes size
+  follow.observe(li);
+
+  const mine = playReply(li, sampleReply(), () => retry(session));
+  playing = mine;
+  mine.finished.then((message) => {
+    follow.disconnect();
+    stick(); // once more, for the buttons that were just added under the reply
+    if (!message) return; // cut short, for example by opening another session
+    playing = null;
+    addReply(state, session.id, message);
+    save(localStorage, state);
+  });
+}
+
+function retry(session) {
+  removeLastReply(state, session.id);
+  save(localStorage, state);
+  drawChat();
+  reply(session);
 }
 
 // The sidebar's width and whether it is hidden are plain CSS: a variable and a
@@ -197,6 +244,7 @@ document.addEventListener('submit', (event) => {
   save(localStorage, state);
   drawSidebar();
   drawChat();
+  reply(state.sessions.find((s) => s.id === state.openSessionId));
 });
 
 document.addEventListener('keydown', (event) => {

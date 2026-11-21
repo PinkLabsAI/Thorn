@@ -69,3 +69,13 @@ export function addMessage(state, sessionId, text) {
   if (session.messages.length === 0) session.title = text.slice(0, 40); // the first message names the session
   session.messages.push({ from: 'user', text });
 }
+
+export function addReply(state, sessionId, reply) {
+  state.sessions.find((s) => s.id === sessionId).messages.push(reply);
+}
+
+// Retrying throws away the latest reply so a new one can take its place.
+export function removeLastReply(state, sessionId) {
+  const { messages } = state.sessions.find((s) => s.id === sessionId);
+  if (messages.at(-1)?.from === 'assistant') messages.pop();
+}
