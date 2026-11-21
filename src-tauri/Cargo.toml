@@ -1,0 +1,17 @@
+[package]
+name = "thorn"
+version = "0.1.0"
+description = "An agent harness"
+edition = "2024"
+
+[lib]
+# The `_lib` suffix keeps the library name different from the binary name.
+name = "thorn_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
