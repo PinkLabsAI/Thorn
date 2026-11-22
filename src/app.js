@@ -31,6 +31,7 @@ const ICONS = {
   dots: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
   chevron: '<path d="m9 18 6-6-6-6"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
+  compose: '<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>',
   settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
   send: '<path d="M12 19V5m-6 6 6-6 6 6"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
@@ -72,7 +73,7 @@ function sessionRow(session) {
 function projectRow(project) {
   const sessions = state.sessions.filter((session) => session.projectId === project.id);
   const summary = `<span class="row" title="${safe(project.path)}">
-    <span class="label">${icon('chevron')}<span class="text">${safe(project.name)}</span></span>
+    <span class="label">${icon('folder')}${icon('chevron')}<span class="text">${safe(project.name)}</span></span>
     <span class="count">${sessions.length || ''}</span>
     <button class="icon" data-action="new-session" data-id="${safe(project.id)}"
       aria-label="New session in ${safe(project.name)}">${icon('plus')}</button>
@@ -93,7 +94,7 @@ function drawSidebar() {
     <div class="titlebar" data-tauri-drag-region></div>
     <div class="scroll">
     <header class="brand">${MARK}Thorn</header>
-    <button class="row label new-session" data-action="new-session">${icon('plus')}New session</button>
+    <button class="row label new-session" data-action="new-session">${icon('compose')}New session</button>
     <section class="nav-section" aria-labelledby="projects-label">
       <header class="heading">
         <span id="projects-label">Projects</span>
@@ -372,7 +373,7 @@ resizer.addEventListener('pointerdown', (down) => {
   const drag = (move) => {
     x = move.clientX;
     state.sidebar.hidden = false;
-    setSidebarWidth(state, x - 8); // the sidebar floats 8px in from the window's edge
+    setSidebarWidth(state, x);
     applySidebar();
     const shift = Math.max(-SIDEBAR_MIN, Math.min(0, x - SIDEBAR_MIN));
     document.documentElement.style.setProperty('--sidebar-shift', `${shift}px`);

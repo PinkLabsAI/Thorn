@@ -1,11 +1,11 @@
 /* Colours are one grey ramp with three text roles and one accent.
    Spacing sits on a 4px grid, and rows share one height. */
 :root {
-  /* The whole window is the Mac's frosted material. These two are thin washes
-     over it, close in tone, so the sidebar reads as a pane of glass resting on
-     the window instead of a differently coloured column. */
-  --sidebar: rgb(255 255 255 / 0.45);
-  --window: rgb(255 255 255 / 0.62);
+  /* The whole window is the Mac's frosted material. The sidebar is that
+     material with a thin wash, and the chat is a rounded panel resting on it
+     with a slightly thicker wash, so the two stay close in tone. */
+  --sidebar: rgb(255 255 255 / 0.4);
+  --window: rgb(255 255 255 / 0.8);
   --glass-edge: inset 0 0 0 1px var(--hairline), 0 8px 24px rgb(0 0 0 / 0.06);
   --on-ink: #ffffff; /* the arrow on the send button */
   --raised: #ffffff; /* menus */
@@ -63,7 +63,7 @@ body {
   overflow: hidden; /* the panes scroll, the window does not */
   font: 14px/20px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   color: var(--ink);
-  background: var(--window);
+  background: var(--sidebar);
 }
 
 button, textarea, select { font: inherit; color: inherit; }
@@ -96,14 +96,10 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 #sidebar {
   flex: none;
   width: var(--sidebar-width, 240px); /* set from app.js when the edge is dragged */
-  /* A floating pane: a gap all round, rounded corners and a lit edge */
-  margin: 8px 0 8px calc(8px + var(--sidebar-shift, 0px)); /* the shift follows a drag past the minimum width */
+  margin-left: var(--sidebar-shift, 0px); /* follows a drag past the minimum width */
   padding: 0 8px 8px;
   display: flex;
   flex-direction: column;
-  background: var(--sidebar);
-  border-radius: 16px;
-  box-shadow: var(--glass-edge);
   font-size: 13px; /* the size Mac sidebars use */
   line-height: 20px;
   /* App chrome should not highlight like text on a web page */
@@ -133,10 +129,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 /* Hide/show button, fixed beside the red, yellow and green window buttons */
 #toggle-sidebar { position: fixed; top: 12px; left: 88px; z-index: 2; }
 
-#sidebar .titlebar { height: calc(var(--titlebar) - 8px); } /* the pane already starts 8px down */
 body.sidebar-hidden #sidebar {
   margin-left: calc(-1 * var(--sidebar-width, 240px));
-  margin-right: 0;
   visibility: hidden;
 }
 body.sidebar-hidden #resizer { margin: 0 -8px 0 0; }
@@ -156,7 +150,7 @@ body.sidebar-hidden #resizer { margin: 0 -8px 0 0; }
   display: flex;
   align-items: center;
   height: var(--row);
-  border-radius: 8px; /* the sidebar's 16 minus its padding of 8 */
+  border-radius: 8px;
   transition: background-color 150ms var(--ease);
 }
 .row:hover { background: var(--hover); }
@@ -187,6 +181,9 @@ summary .label { font-weight: 500; }
 summary + ul { margin-top: 2px; padding-left: 24px; } /* session names line up under the project's name */
 .chevron { transition: transform 150ms var(--ease); }
 details[open] > summary .chevron { transform: rotate(90deg); }
+/* A project shows a folder; pointing at it swaps in the arrow that opens and closes it */
+summary .chevron, summary .row:hover .folder, summary .row:focus-within .folder { display: none; }
+summary .row:hover .chevron, summary .row:focus-within .chevron { display: block; }
 .heading {
   min-height: 24px;
   margin-bottom: 4px; /* a label sits closer to its own list than to the section above */
@@ -273,7 +270,15 @@ details[open] > summary .chevron { transform: rotate(90deg); }
   min-width: 0;
   display: flex;
   flex-direction: column;
+  /* A rounded panel resting on the window, with the sidebar beside it */
+  margin: 8px 8px 8px 0;
+  overflow: hidden;
+  background: var(--window);
+  border-radius: 12px;
+  box-shadow: var(--glass-edge);
 }
+body.sidebar-hidden #chat { margin-left: 8px; }
+#chat .titlebar { height: calc(var(--titlebar) - 8px); } /* the panel already starts 8px down */
 
 /* One shared reading column aligns the transcript and composer. */
 .messages, .compose-dock, .welcome {
@@ -289,8 +294,8 @@ details[open] > summary .chevron { transform: rotate(90deg); }
   flex: none;
   display: flex;
   align-items: center;
-  height: var(--titlebar);
-  margin-top: calc(-1 * var(--titlebar));
+  height: calc(var(--titlebar) - 8px);
+  margin-top: calc(8px - var(--titlebar));
   padding-inline: 20px;
   border-bottom: 1px solid var(--hairline);
   font-size: 13px;
@@ -421,7 +426,7 @@ kbd {
   width: 32px;
   height: 32px;
   margin-left: auto;
-  border-radius: 8px;
+  border-radius: 50%;
   background: var(--ink);
   color: var(--on-ink);
   transition: background-color 150ms var(--ease), transform 150ms var(--ease);
