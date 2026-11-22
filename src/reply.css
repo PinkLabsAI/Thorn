@@ -68,17 +68,17 @@
   flex-direction: column;
   gap: 12px;
   font-size: 15px;
-  line-height: 25px;
+  line-height: 24px;
   overflow-wrap: anywhere;
 }
 .answer:empty { display: none; }
 .answer :is(p, h3, h4, h5, blockquote, pre) { margin: 0; }
 .answer :is(h3, h4, h5) { font-weight: 500; }
 .answer h3 { font-size: 20px; line-height: 28px; }
-.answer h4 { font-size: 17px; }
+.answer h4 { font-size: 16px; }
 .answer h5 { font-size: 15px; }
 .answer strong { font-weight: 500; color: var(--ink); }
-.answer :is(ul, ol) { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.answer :is(ul, ol) { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
 .answer ul { list-style: disc; }
 .answer ol { list-style: decimal; }
 .answer li { padding-left: 4px; }
@@ -86,7 +86,7 @@
 .answer blockquote { padding-left: 16px; border-left: 2px solid var(--current); color: var(--ink-2); }
 .answer .link { text-decoration: underline; text-decoration-color: var(--ink-3); text-underline-offset: 4px; }
 .answer code { font: 13px/20px ui-monospace, SFMono-Regular, Menlo, monospace; }
-.answer :not(pre) > code { padding: 2px 6px; border-radius: 6px; background: var(--current); }
+.answer :not(pre) > code { padding: 2px 4px; border-radius: 6px; background: var(--current); }
 
 .code { border: 1px solid var(--hairline); border-radius: 12px; background: var(--hover); overflow: hidden; }
 .code-top {
@@ -108,8 +108,8 @@
   position: relative;
   display: inline-grid;
   place-items: center;
-  min-width: 17px;
-  height: 17px;
+  min-width: 16px;
+  height: 16px;
   padding: 0 4px;
   border-radius: 4px;
   background: var(--hover);
@@ -119,7 +119,7 @@
   vertical-align: 0.15em;
   cursor: default;
 }
-.cite + .cite { margin-left: 3px; }
+.cite + .cite { margin-left: 4px; }
 .cite:hover, .cite:focus-visible { background: var(--current); color: var(--ink); }
 
 /* The card that appears above a citation. Hidden with opacity and visibility

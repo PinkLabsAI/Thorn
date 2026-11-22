@@ -114,7 +114,7 @@ function composer(project, hasMessages) {
       <button class="send-button" aria-label="Send message" title="Send message" disabled>${icon('send')}</button>
     </div>
   </form>
-  <p class="notice">Demo mode. Replies are scripted until a model is connected.</p>`;
+  <p class="notice">Demo mode, replies are scripted until a model is connected</p>`;
 }
 
 function drawChat() {
@@ -132,7 +132,7 @@ function drawChat() {
       <div class="compose-dock">${composer(project, true)}</div>
     ` : `
       <div class="welcome">
-        ${MARK}<h1>What are we working on?</h1>
+        ${MARK}<h1>New session</h1>
         ${composer(project, false)}
       </div>
     `}`;

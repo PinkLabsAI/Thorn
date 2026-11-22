@@ -6,7 +6,8 @@
      the window instead of a differently coloured column. */
   --sidebar: rgb(255 255 255 / 0.45);
   --window: rgb(255 255 255 / 0.62);
-  --glass-edge: inset 0 0 0 1px rgb(255 255 255 / 0.6), 0 1px 3px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.06);
+  --glass-edge: inset 0 0 0 1px var(--hairline), 0 8px 24px rgb(0 0 0 / 0.06);
+  --on-ink: #ffffff; /* the arrow on the send button */
   --raised: #ffffff; /* menus */
   --field: #ffffff; /* the composer */
   --bubble: rgb(23 23 23 / 0.06); /* your own messages */
@@ -17,11 +18,11 @@
   --hover: rgb(23 23 23 / 0.04);
   --current: rgb(23 23 23 / 0.08);
   --danger: #dc2626;
-  --accent: #ff4d8d; /* PinkLabs pink: the thorn mark, the send button and the keyboard focus ring */
+  --accent: #ff4d8d; /* PinkLabs pink, kept for the thorn mark and the keyboard focus ring */
   --float: 0 8px 24px rgb(0 0 0 / 0.08);
-  --field-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), 0 2px 6px rgb(0 0 0 / 0.05), 0 8px 24px rgb(0 0 0 / 0.05);
+  --field-shadow: 0 0 0 1px var(--hairline), 0 8px 24px rgb(0 0 0 / 0.06);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --row: 28px;
+  --row: 32px;
   --titlebar: 48px; /* the strip that holds the window buttons; see trafficLightPosition in tauri.conf.json */
   color-scheme: light dark;
 }
@@ -31,7 +32,8 @@
   :root {
     --sidebar: rgb(255 255 255 / 0.05);
     --window: rgb(20 20 22 / 0.5);
-    --glass-edge: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 8px 24px rgb(0 0 0 / 0.2);
+    --glass-edge: inset 0 0 0 1px var(--hairline); /* in the dark an edge is a hairline, never a shadow */
+    --on-ink: #171717;
     --raised: #2a2a2d;
     --field: rgb(255 255 255 / 0.07);
     --bubble: rgb(255 255 255 / 0.08);
@@ -43,7 +45,7 @@
     --current: rgb(237 237 237 / 0.08);
     --danger: #e5484d;
     --float: none; /* in the dark, depth comes from the lighter surface, not a shadow */
-    --field-shadow: 0 0 0 1px rgb(255 255 255 / 0.07), 0 8px 24px rgb(0 0 0 / 0.25);
+    --field-shadow: inset 0 0 0 1px var(--hairline);
   }
 }
 
@@ -100,7 +102,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   border-radius: 16px;
   box-shadow: var(--glass-edge);
   font-size: 13px; /* the size Mac sidebars use */
-  line-height: 18px;
+  line-height: 20px;
   /* App chrome should not highlight like text on a web page */
   user-select: none;
   -webkit-user-select: none;
@@ -113,6 +115,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   gap: 8px;
   height: 32px;
   padding: 0 8px;
+  font-size: 16px;
   font-weight: 500;
 }
 
@@ -142,13 +145,13 @@ body.sidebar-hidden #resizer { margin: 0 -8px 0 0; }
   display: flex;
   align-items: center;
   height: var(--row);
-  border-radius: 6px;
+  border-radius: 8px; /* the sidebar's 16 minus its padding of 8 */
   transition: background-color 150ms var(--ease);
 }
 .row:hover { background: var(--hover); }
 .row[aria-current="true"] { background: var(--current); }
 .row[aria-current="true"] .text { color: var(--ink); font-weight: 500; }
-li + li { margin-top: 1px; }
+li + li { margin-top: 2px; }
 
 .label {
   flex: 1;
@@ -158,31 +161,31 @@ li + li { margin-top: 1px; }
   gap: 8px;
   height: var(--row);
   padding: 0 8px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 button.row.label { width: 100%; flex: none; }
 .label > .i { color: var(--ink-3); }
 .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Projects disclose their sessions in place. */
-.nav-section { margin-top: 16px; }
+.nav-section { margin-top: 24px; }
 .nav-section li .text { color: var(--ink-2); }
 summary { list-style: none; }
 summary::-webkit-details-marker { display: none; }
 summary .label { font-weight: 500; }
-summary + ul { margin-top: 1px; padding-left: 24px; } /* session names line up under the project's name */
+summary + ul { margin-top: 2px; padding-left: 24px; } /* session names line up under the project's name */
 .chevron { transition: transform 150ms var(--ease); }
 details[open] > summary .chevron { transform: rotate(90deg); }
 .heading {
   min-height: 24px;
+  margin-bottom: 4px; /* a label sits closer to its own list than to the section above */
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 4px 0 8px;
   color: var(--ink-3);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.02em;
 }
 .empty-row {
   height: var(--row);
@@ -204,9 +207,9 @@ details[open] > summary .chevron { transform: rotate(90deg); }
 
 .icon {
   flex: none;
-  width: 22px;
-  height: 22px;
-  margin-right: 2px;
+  width: 24px;
+  height: 24px;
+  margin-right: 4px;
   display: grid;
   place-items: center;
   border-radius: 6px;
@@ -217,7 +220,7 @@ details[open] > summary .chevron { transform: rotate(90deg); }
 
 /* ---------- Three-dot menus ---------- */
 
-.dots { position: relative; flex: none; margin-right: 3px; }
+.dots { position: relative; flex: none; margin-right: 4px; }
 
 .menu {
   position: absolute;
@@ -240,7 +243,7 @@ details[open] > summary .chevron { transform: rotate(90deg); }
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  height: 28px;
+  height: 32px;
   padding: 0 8px;
   border-radius: 4px; /* menu radius 8 minus its padding 4 */
   transition: background-color 150ms var(--ease);
@@ -290,12 +293,11 @@ body.sidebar-hidden .chat-title { padding-left: 128px; }
 }
 .welcome .mark { width: 36px; height: 36px; margin-bottom: 16px; }
 .welcome h1 {
-  margin: 0 0 28px;
+  margin: 0 0 24px;
   text-align: center;
-  font-size: 26px;
-  line-height: 1.2;
+  font-size: 28px;
+  line-height: 32px;
   font-weight: 500;
-  letter-spacing: -0.02em;
 }
 .welcome .composer, .welcome .notice { width: 100%; }
 
@@ -303,7 +305,7 @@ body.sidebar-hidden .chat-title { padding-left: 128px; }
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-block: 28px 32px;
+  padding-block: 24px 32px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -312,8 +314,8 @@ body.sidebar-hidden .chat-title { padding-left: 128px; }
 .messages > li:not(.reply) {
   align-self: flex-end;
   max-width: 80%;
-  padding: 8px 14px;
-  border-radius: 18px;
+  padding: 8px 12px;
+  border-radius: 16px;
   background: var(--bubble);
   white-space: pre-wrap;
 }
@@ -322,9 +324,9 @@ body.sidebar-hidden .chat-title { padding-left: 128px; }
 .compose-dock { flex: none; padding-top: 8px; padding-bottom: 12px; }
 .composer {
   display: grid;
-  gap: 6px;
-  padding: 12px 10px 10px 14px;
-  border-radius: 18px;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 20px;
   background: var(--field);
   box-shadow: var(--field-shadow);
 }
@@ -333,7 +335,7 @@ body.sidebar-hidden .chat-title { padding-left: 128px; }
   width: 100%;
   min-height: 44px;
   max-height: 120px;
-  padding: 0;
+  padding: 0 4px;
   border: 0;
   outline: 0; /* the blinking caret already shows where typing goes */
   background: transparent;
@@ -353,11 +355,11 @@ body.sidebar-hidden .chat-title { padding-left: 128px; }
   display: flex;
   align-items: center;
   min-width: 0;
-  gap: 6px;
+  gap: 8px;
   height: 28px;
-  margin-left: -6px;
+  margin-left: -4px;
   padding-inline: 8px;
-  border-radius: 8px;
+  border-radius: 8px; /* the composer's 20 minus its padding of 12 */
   font-size: 13px;
   color: var(--ink-2);
 }
@@ -376,20 +378,19 @@ body.sidebar-hidden .chat-title { padding-left: 128px; }
   flex: none;
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   margin-left: auto;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #ffffff;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--on-ink);
   transition: background-color 150ms var(--ease), transform 150ms var(--ease);
 }
-.send-button .i { stroke-width: 2; }
 .send-button:focus-visible { outline-offset: 2px; }
-.send-button:not(:disabled):active { transform: scale(0.94); }
+.send-button:not(:disabled):active { transform: scale(0.97); }
 .send-button:disabled { background: var(--current); color: var(--ink-3); }
 .notice {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   text-align: center;
   color: var(--ink-3);
   font-size: 11px;

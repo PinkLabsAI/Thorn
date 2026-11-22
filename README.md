@@ -34,7 +34,7 @@ Projects and sessions are saved in the app's own `localStorage`, on this Mac onl
 
 ## Design
 
-The look follows the [unslop](https://github.com/heydamir/unslop) design guidelines by Damir Sokolovsky: one grey ramp with three text roles, spacing on a 4px grid, one line-icon set ([lucide](https://lucide.dev)) at one size, and weights 400 and 500 only. Pink is the one accent, kept for Thorn's mark, the send button and the keyboard focus ring.
+The look follows the [unslop](https://github.com/heydamir/unslop) design guidelines by Damir Sokolovsky: one grey ramp with three text roles, spacing on a 4px grid, one line-icon set ([lucide](https://lucide.dev)) at one size, and weights 400 and 500 only. Pink is the one accent, kept for Thorn's mark and the keyboard focus ring.
 
 The whole window is the Mac's own frosted material, with the sidebar floating on it as a rounded pane of glass, so the two sides stay close in colour. That takes a see-through window, which Tauri only allows with `macOSPrivateApi` turned on in `src-tauri/tauri.conf.json`. Apps that use it cannot be sold on the Mac App Store, so Thorn is meant to be downloaded directly.
 
