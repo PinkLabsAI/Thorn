@@ -334,7 +334,7 @@ resizer.addEventListener('pointerdown', (down) => {
   const drag = (move) => {
     x = move.clientX;
     state.sidebar.hidden = false;
-    setSidebarWidth(state, x);
+    setSidebarWidth(state, x - 8); // the sidebar floats 8px in from the window's edge
     applySidebar();
     const shift = Math.max(-SIDEBAR_MIN, Math.min(0, x - SIDEBAR_MIN));
     document.documentElement.style.setProperty('--sidebar-shift', `${shift}px`);

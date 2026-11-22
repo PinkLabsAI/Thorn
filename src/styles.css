@@ -1,11 +1,15 @@
 /* Colours are one grey ramp with three text roles and one accent.
    Spacing sits on a 4px grid, and rows share one height. */
 :root {
-  --sidebar: rgb(255 255 255 / 0.3); /* a light wash over the Mac's own frosted sidebar material */
-  --window: #ffffff;
+  /* The whole window is the Mac's frosted material. These two are thin washes
+     over it, close in tone, so the sidebar reads as a pane of glass resting on
+     the window instead of a differently coloured column. */
+  --sidebar: rgb(255 255 255 / 0.45);
+  --window: rgb(255 255 255 / 0.62);
+  --glass-edge: inset 0 0 0 1px rgb(255 255 255 / 0.6), 0 1px 3px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.06);
   --raised: #ffffff; /* menus */
   --field: #ffffff; /* the composer */
-  --bubble: #f1f1f2; /* your own messages */
+  --bubble: rgb(23 23 23 / 0.06); /* your own messages */
   --ink: #171717; /* primary text */
   --ink-2: #525252; /* secondary text */
   --ink-3: #737373; /* muted text and icons */
@@ -25,11 +29,12 @@
 /* Follows the Mac's Light/Dark appearance setting */
 @media (prefers-color-scheme: dark) {
   :root {
-    --sidebar: rgb(0 0 0 / 0.18);
-    --window: #1b1b1d;
+    --sidebar: rgb(255 255 255 / 0.05);
+    --window: rgb(20 20 22 / 0.5);
+    --glass-edge: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 8px 24px rgb(0 0 0 / 0.2);
     --raised: #2a2a2d;
-    --field: #262629;
-    --bubble: #2a2a2d;
+    --field: rgb(255 255 255 / 0.07);
+    --bubble: rgb(255 255 255 / 0.08);
     --ink: #ececee;
     --ink-2: #b4b4ba;
     --ink-3: #8b8b92;
@@ -44,9 +49,9 @@
 
 * { box-sizing: border-box; }
 
-/* The page itself is see-through, so the Mac's frosted material shows behind
-   the sidebar. The chat pane paints its own solid background. */
-html, body { background: transparent; }
+/* The page itself is see-through, so the Mac's frosted material shows through
+   both panes. */
+html { background: transparent; }
 
 body {
   margin: 0;
@@ -55,6 +60,7 @@ body {
   overflow: hidden; /* the panes scroll, the window does not */
   font: 14px/20px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   color: var(--ink);
+  background: var(--window);
 }
 
 button, textarea, select { font: inherit; color: inherit; }
@@ -86,10 +92,13 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 #sidebar {
   flex: none;
   width: var(--sidebar-width, 240px); /* set from app.js when the edge is dragged */
+  /* A floating pane: a gap all round, rounded corners and a lit edge */
+  margin: 8px 0 8px calc(8px + var(--sidebar-shift, 0px)); /* the shift follows a drag past the minimum width */
   padding: 0 8px 12px;
   overflow-y: auto;
   background: var(--sidebar);
-  border-right: 1px solid var(--hairline);
+  border-radius: 16px;
+  box-shadow: var(--glass-edge);
   font-size: 13px; /* the size Mac sidebars use */
   line-height: 18px;
   /* App chrome should not highlight like text on a web page */
@@ -110,10 +119,10 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 /* Hide/show button, fixed beside the red, yellow and green window buttons */
 #toggle-sidebar { position: fixed; top: 12px; left: 88px; z-index: 2; }
 
-/* The sidebar stays in layout while dragging past its minimum width. */
-#sidebar { margin-left: var(--sidebar-shift, 0px); }
+#sidebar .titlebar { height: calc(var(--titlebar) - 8px); } /* the pane already starts 8px down */
 body.sidebar-hidden #sidebar {
   margin-left: calc(-1 * var(--sidebar-width, 240px));
+  margin-right: 0;
   visibility: hidden;
 }
 body.sidebar-hidden #resizer { margin: 0 -8px 0 0; }
@@ -246,7 +255,6 @@ details[open] > summary .chevron { transform: rotate(90deg); }
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--window);
 }
 
 /* One shared reading column aligns the transcript and composer. */

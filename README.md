@@ -36,6 +36,6 @@ Projects and sessions are saved in the app's own `localStorage`, on this Mac onl
 
 The look follows the [unslop](https://github.com/heydamir/unslop) design guidelines by Damir Sokolovsky: one grey ramp with three text roles, spacing on a 4px grid, one line-icon set ([lucide](https://lucide.dev)) at one size, and weights 400 and 500 only. Pink is the one accent, kept for Thorn's mark, the send button and the keyboard focus ring.
 
-The sidebar shows the Mac's own frosted material behind it. That takes a see-through window, which Tauri only allows with `macOSPrivateApi` turned on in `src-tauri/tauri.conf.json`. Apps that use it cannot be sold on the Mac App Store, so Thorn is meant to be downloaded directly.
+The whole window is the Mac's own frosted material, with the sidebar floating on it as a rounded pane of glass, so the two sides stay close in colour. That takes a see-through window, which Tauri only allows with `macOSPrivateApi` turned on in `src-tauri/tauri.conf.json`. Apps that use it cannot be sold on the Mac App Store, so Thorn is meant to be downloaded directly.
 
 Research results appear in a compact disclosure list with bundled publisher logos and numbered citations in the answer. The MDN, Tauri and Claude marks come from [theSVG](https://thesvg.org) ([MIT license](src/source-logos/LICENSE-theSVG.txt)). The web.dev favicon comes from [web.dev](https://web.dev/). The [WHATWG mark](https://resources.whatwg.org/logo.svg) comes from [WHATWG](https://whatwg.org/). The marks remain the property of their respective owners.
