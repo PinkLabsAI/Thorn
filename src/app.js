@@ -73,6 +73,7 @@ function projectRow(project) {
   const sessions = state.sessions.filter((session) => session.projectId === project.id);
   const summary = `<span class="row" title="${safe(project.path)}">
     <span class="label">${icon('chevron')}<span class="text">${safe(project.name)}</span></span>
+    <span class="count">${sessions.length || ''}</span>
     <button class="icon" data-action="new-session" data-id="${safe(project.id)}"
       aria-label="New session in ${safe(project.name)}">${icon('plus')}</button>
     ${dots('Project options', deleteItem('delete-project', project.id))}
@@ -153,7 +154,13 @@ function drawChat() {
     ` : `
       <div class="welcome">
         ${MARK}<h1>New session</h1>
+        <p class="lede">Ask a model to work in a folder on this Mac</p>
         ${composer(project, false)}
+        <p class="keys">
+          <span><kbd>↵</kbd>send</span>
+          <span><kbd>⇧</kbd><kbd>↵</kbd>new line</span>
+          <span><kbd>⌘</kbd><kbd>B</kbd>sidebar</span>
+        </p>
       </div>
     `}`;
   // Replies are built from elements rather than text, so they fill their <li> after it exists
