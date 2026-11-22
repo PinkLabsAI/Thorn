@@ -2,6 +2,7 @@
 // playReply shows one live as its events arrive; drawReply shows a finished one.
 
 import { toHtml, safe, wordEnds } from './markdown.js';
+import { logoFor } from './logos.js';
 
 // Line icons from the lucide set, as in app.js
 const svg = (name, shape) => `<svg class="i ${name}" viewBox="0 0 24 24" aria-hidden="true">${shape}</svg>`;
@@ -55,12 +56,21 @@ const hostOf = (url) => new URL(url).hostname.replace(/^www\./, '');
 // developer.mozilla.org reads as "mozilla", the way people say it
 const siteName = (url) => hostOf(url).split('.').at(-2) ?? hostOf(url);
 
-// A round tile with the site's first letter. Its colour is worked out from the
+// Logos that failed to load, which means there is no internet. Replies redraw
+// often, and this stops each redraw from asking for the same picture again.
+const failed = new Set();
+
+// A round tile for a site: its brand logo from thesvg.org (MIT licensed) when
+// it has one, or else the site's first letter on a colour worked out from the
 // name, so a site always gets the same one.
 function favicon(source, extra = '') {
   const name = siteName(source.url);
+  const logo = logoFor(source.url);
   const hue = [...name].reduce((sum, ch) => (sum * 31 + ch.charCodeAt(0)) % 360, 0);
-  return `<span class="fav ${extra}" style="--hue:${hue}" aria-hidden="true">${safe(name[0])}</span>`;
+  const tile = (kind, inside) =>
+    `<span class="fav ${kind} ${extra}" data-letter="${safe(name[0])}" style="--hue:${hue}" aria-hidden="true">${inside}</span>`;
+  if (!logo || failed.has(logo)) return tile('', safe(name[0]));
+  return tile('logo', `<img src="https://thesvg.org/icons/${logo}/default.svg" data-logo="${logo}" alt="">`);
 }
 
 // The small pill that stands for source `n` inside the answer. Its preview card
@@ -295,6 +305,15 @@ function listen(li) {
     button.textContent = 'Copied';
     setTimeout(() => { button.textContent = 'Copy'; }, COPIED_MS);
   });
+  // A logo that fails to load becomes a letter tile. "error" does not bubble,
+  // so the listener has to catch it on the way down (capture).
+  li.addEventListener('error', (event) => {
+    const tile = event.target.closest?.('.fav.logo');
+    if (!tile) return;
+    failed.add(event.target.dataset.logo);
+    tile.classList.remove('logo');
+    tile.textContent = tile.dataset.letter;
+  }, true);
   for (const type of ['pointerover', 'focusin']) {
     li.addEventListener(type, (event) => {
       const cite = event.target.closest('.cite');

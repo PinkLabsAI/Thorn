@@ -44,7 +44,8 @@
 }
 @keyframes shimmer { to { background-position: 0 0; } }
 
-/* A site's letter on a coloured disc; --hue is set per site from reply.js */
+/* A site's logo on a white disc, or its letter on a coloured one when there is
+   no logo; --hue is set per site from reply.js */
 .fav {
   flex: none;
   width: 16px;
@@ -59,6 +60,8 @@
   font-weight: 500;
   text-transform: uppercase;
 }
+.fav.logo { background: #fff; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06); }
+.fav img { width: 100%; height: 100%; padding: 15%; object-fit: contain; }
 
 /* Favicons overlapping like a fanned deck; pointing at them spreads them out */
 .stack { display: flex; flex: none; }
@@ -312,7 +315,8 @@
   line-height: 1;
   font-weight: 500;
   white-space: nowrap;
-  vertical-align: 1px;
+  vertical-align: middle; /* not the baseline: a logo has none, so pills with and without one would sit at different heights */
+  margin-top: -2px;
   cursor: default;
   transition: background-color 150ms var(--ease), color 150ms var(--ease), box-shadow 150ms var(--ease);
 }
