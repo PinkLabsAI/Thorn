@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  STORAGE_KEY, newState, load, addProject, addSession, removeSession, removeProject, addMessage,
+  STORAGE_KEY, newState, load, addProject, addSession, removeSession, removeProject, addMessage, addReply, removeLastReply,
   setSidebarWidth,
 } from '../src/store.js';
 
@@ -75,4 +75,16 @@ test('load starts fresh when saved data is missing or unreadable', () => {
 
   assert.deepEqual(load(storageHolding(null)), newState());
   assert.deepEqual(load(storageHolding('{not json')), newState());
+});
+
+test('retrying removes the latest reply but never a message the user wrote', () => {
+  const state = newState();
+  const session = addSession(state);
+  addMessage(state, session.id, 'Explain closures');
+  addReply(state, session.id, { from: 'assistant', text: 'A closure is…' });
+
+  removeLastReply(state, session.id);
+  removeLastReply(state, session.id);
+
+  assert.deepEqual(session.messages, [{ from: 'user', text: 'Explain closures' }]);
 });
