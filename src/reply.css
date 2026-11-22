@@ -1,0 +1,187 @@
+/* Assistant activity and answers share the conversation canvas. */
+.messages > .reply { display: grid; gap: 8px; min-width: 0; }
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-3);
+  font-size: 14px;
+  line-height: 20px;
+}
+/* The one live thing on screen while a reply is arriving, so it carries the accent */
+.working-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.search { min-width: 0; color: var(--ink-2); font-size: 12px; }
+.search summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin-left: -4px;
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.search summary:hover { background: var(--hover); }
+.search-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search .chevron-down { transition: transform 150ms var(--ease); }
+.search[open] .chevron-down { transform: rotate(180deg); }
+.sources {
+  display: grid;
+  gap: 4px;
+  padding-block: 4px;
+}
+.source {
+  display: grid;
+  margin-inline: -4px;
+  padding-inline: 4px;
+  border-radius: 6px;
+  grid-template-columns: 16px 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+.source:hover { background: var(--hover); }
+.sources li + li { margin-top: 0; }
+.source-index { text-align: right; }
+.source-index, .source-host { color: var(--ink-3); }
+.source-index, .cite, .status { font-variant-numeric: tabular-nums; }
+.source-title, .source-host { display: block; line-height: 16px; }
+.source-title { color: var(--ink); }
+.source-logo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: var(--hover);
+}
+.source-logo:has(img) { background: #fafafa; }
+.source-logo img { display: block; object-fit: contain; }
+
+/* ---------- Answer ---------- */
+
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 15px;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.answer:empty { display: none; }
+.answer :is(p, h3, h4, h5, blockquote, pre) { margin: 0; }
+.answer :is(h3, h4, h5) { font-weight: 500; }
+.answer h3 { font-size: 20px; line-height: 28px; margin-top: 8px; }
+.answer h4 { font-size: 16px; }
+.answer h5 { font-size: 15px; }
+.answer strong { font-weight: 500; color: var(--ink); }
+.answer :is(ul, ol) { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.answer ul { list-style: disc; }
+.answer ol { list-style: decimal; }
+.answer li { padding-left: 4px; }
+.answer li::marker { color: var(--ink-3); }
+.answer blockquote { padding-left: 16px; border-left: 2px solid var(--current); color: var(--ink-2); }
+.answer .link { text-decoration: underline; text-decoration-color: var(--ink-3); text-underline-offset: 4px; }
+.answer .link:hover { text-decoration-color: var(--accent); }
+.answer code { font: 13px/20px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.answer :not(pre) > code { padding: 2px 4px; border-radius: 6px; background: var(--current); }
+
+.code { border: 1px solid var(--hairline); border-radius: 12px; background: var(--hover); overflow: hidden; }
+.code-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 8px 0 16px;
+  color: var(--ink-3);
+  font: 12px/16px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.code-top button { padding: 4px 8px; border-radius: 6px; font: 12px/16px -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+.code-top button:hover { background: var(--current); color: var(--ink); }
+.code pre { padding: 0 16px 16px; overflow-x: auto; }
+.t-comment { color: var(--ink-3); }
+.t-keyword { color: var(--t-keyword); }
+.t-string { color: var(--t-string); }
+.t-number { color: var(--t-number); }
+
+/* Lists inside lists sit closer to the item they belong to */
+.answer li > :is(ul, ol) { margin-top: 8px; }
+.answer li > ul { list-style: circle; }
+
+.table { overflow-x: auto; border: 1px solid var(--hairline); border-radius: 12px; }
+.answer table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px; }
+.answer :is(th, td) { padding: 8px 16px; text-align: left; vertical-align: top; }
+.answer th { font-weight: 500; background: var(--hover); }
+.answer td { border-top: 1px solid var(--hairline); }
+
+/* Why a reply stopped short */
+.reply-error { margin: 0; color: var(--danger); font-size: 14px; line-height: 20px; }
+
+/* ---------- Citations ---------- */
+
+.cite {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--hover);
+  color: var(--ink-2);
+  font-size: 11px;
+  line-height: 1;
+  vertical-align: 0.15em;
+  cursor: pointer;
+}
+.cite + .cite { margin-left: 4px; }
+.cite:hover, .cite:focus-visible { background: var(--current); color: var(--ink); }
+
+/* The card that appears above a citation. Hidden with opacity and visibility
+   (not display) so it can fade, after a short wait so a passing pointer does
+   not set it off. reply.js nudges `left` to keep it inside the reply. */
+.preview {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 2;
+  width: min(280px, calc(100vw - 280px));
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--raised);
+  box-shadow: var(--float);
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 150ms var(--ease), visibility 0s 150ms;
+}
+.preview.below { bottom: auto; top: calc(100% + 8px); }
+.cite:hover .preview, .cite:focus-visible .preview {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 150ms;
+}
+.preview .site { display: flex; align-items: center; gap: 8px; }
+.preview .title { color: var(--ink); font-size: 14px; line-height: 20px; }
+.preview .site, .preview .snippet { font-size: 12px; line-height: 16px; }
+
+/* Copy and retry */
+.reply .actions { display: flex; gap: 4px; margin-left: -4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reply *, .reply *::after { transition: none !important; }
+}

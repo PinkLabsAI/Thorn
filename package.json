@@ -1,0 +1,14 @@
+{
+  "name": "thorn",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}
