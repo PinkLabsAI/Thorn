@@ -10,6 +10,7 @@ import { sampleReply } from './sample.js';
 // Tauri exposes its API on window.__TAURI__ ("withGlobalTauri" in tauri.conf.json).
 // `open` shows the Mac folder picker and `confirm` a Mac confirmation dialog.
 const { open, confirm } = window.__TAURI__.dialog;
+const appWindow = window.__TAURI__.window.getCurrentWindow();
 
 const state = load(localStorage);
 const sidebar = document.querySelector('#sidebar');
@@ -29,6 +30,8 @@ const ICONS = {
   plus: '<path d="M5 12h14M12 5v14"/>',
   dots: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
   chevron: '<path d="m9 18 6-6-6-6"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  settings: '<path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
   send: '<path d="M12 19V5m-6 6 6-6 6 6"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
 };
@@ -77,10 +80,17 @@ function projectRow(project) {
   return `<li>${dropdown(project.id, summary, sessions.map((s) => sessionRow(s)).join(''), 'No sessions yet')}</li>`;
 }
 
+// One choice in the Appearance list. The current one carries a tick.
+function themeOption(value, text) {
+  const chosen = state.theme === value;
+  return `<button role="menuitemradio" aria-checked="${chosen}" data-action="theme" data-id="${value}">${text}${chosen ? icon('check') : ''}</button>`;
+}
+
 function drawSidebar() {
   const standalone = state.sessions.filter((session) => !session.projectId);
   sidebar.innerHTML = `
     <div class="titlebar" data-tauri-drag-region></div>
+    <div class="scroll">
     <header class="brand">${MARK}Thorn</header>
     <button class="row label new-session" data-action="new-session">${icon('plus')}New session</button>
     <section class="nav-section" aria-labelledby="projects-label">
@@ -93,7 +103,17 @@ function drawSidebar() {
     ${standalone.length ? `<section class="nav-section" aria-labelledby="sessions-label">
       <header class="heading" id="sessions-label">Sessions</header>
       <ul>${standalone.map(sessionRow).join('')}</ul>
-    </section>` : ''}`;
+    </section>` : ''}
+    </div>
+    <footer class="foot">
+      <button class="row label" data-action="menu" aria-haspopup="menu" aria-expanded="false">${icon('settings')}Settings</button>
+      <span class="menu" role="menu" hidden>
+        <span class="menu-title">Appearance</span>
+        ${themeOption('system', 'System')}
+        ${themeOption('light', 'Light')}
+        ${themeOption('dark', 'Dark')}
+      </span>
+    </footer>`;
 }
 
 function composer(project, hasMessages) {
@@ -188,6 +208,13 @@ function applySidebar() {
   document.body.classList.toggle('sidebar-hidden', state.sidebar.hidden);
 }
 
+// Asks the Mac to draw the window light or dark. Passing null hands the choice
+// back to the Mac's own appearance setting. The stylesheet needs no second set
+// of colours for this: it already follows whichever appearance the window has.
+function applyTheme() {
+  appWindow.setTheme(state.theme === 'system' ? null : state.theme);
+}
+
 function closeMenus(except = null) {
   for (const menu of document.querySelectorAll('.menu')) {
     if (menu === except) continue;
@@ -216,6 +243,10 @@ document.addEventListener('click', async (event) => {
   if (action === 'toggle-sidebar') {
     state.sidebar.hidden = !state.sidebar.hidden;
     applySidebar();
+  }
+  if (action === 'theme') {
+    state.theme = id;
+    applyTheme();
   }
   if (action === 'open-session') state.openSessionId = id;
   if (action === 'new-session') addSession(state, id ?? null);
@@ -357,6 +388,7 @@ resizer.addEventListener('dblclick', () => {
 });
 
 applySidebar();
+if (state.theme !== 'system') applyTheme();
 
 drawSidebar();
 drawChat();

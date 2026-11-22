@@ -88,3 +88,8 @@ test('retrying removes the latest reply but never a message the user wrote', () 
 
   assert.deepEqual(session.messages, [{ from: 'user', text: 'Explain closures' }]);
 });
+
+test('saved data from before a setting existed still gets that setting', () => {
+  const storage = { getItem: () => JSON.stringify({ projects: [], sessions: [] }) };
+  assert.equal(load(storage).theme, 'system');
+});

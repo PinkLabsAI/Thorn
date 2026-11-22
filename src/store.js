@@ -10,6 +10,7 @@ export function newState() {
     openSessionId: null,
     closed: {}, // dropdown key -> true when the user collapsed it
     sidebar: { width: SIDEBAR_DEFAULT, hidden: false },
+    theme: 'system', // 'system' follows the Mac's appearance; 'light' and 'dark' override it
   };
 }
 

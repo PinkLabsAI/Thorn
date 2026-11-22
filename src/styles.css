@@ -96,8 +96,9 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   width: var(--sidebar-width, 240px); /* set from app.js when the edge is dragged */
   /* A floating pane: a gap all round, rounded corners and a lit edge */
   margin: 8px 0 8px calc(8px + var(--sidebar-shift, 0px)); /* the shift follows a drag past the minimum width */
-  padding: 0 8px 12px;
-  overflow-y: auto;
+  padding: 0 8px 8px;
+  display: flex;
+  flex-direction: column;
   background: var(--sidebar);
   border-radius: 16px;
   box-shadow: var(--glass-edge);
@@ -108,6 +109,14 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   -webkit-user-select: none;
   cursor: default;
 }
+
+/* Everything between the top strip and Settings scrolls; Settings stays put */
+#sidebar .scroll { flex: 1; min-height: 0; overflow-y: auto; }
+
+/* Settings sits at the bottom left, and its menu opens upwards */
+.foot { flex: none; position: relative; padding-top: 8px; }
+.foot .menu { top: auto; bottom: calc(100% + 4px); left: 0; right: auto; }
+.menu-title { display: block; padding: 4px 8px; color: var(--ink-3); font-size: 12px; line-height: 16px; }
 
 .brand {
   display: flex;
