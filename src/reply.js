@@ -2,6 +2,7 @@
 // playReply shows one live as its events arrive; drawReply shows a finished one.
 
 import { toHtml, safe, wordEnds } from './markdown.js';
+import { logoFor } from './logos.js';
 
 // Line icons from the lucide set, as in app.js
 const svg = (name, shape) => `<svg class="i ${name}" viewBox="0 0 24 24" aria-hidden="true">${shape}</svg>`;
@@ -55,20 +56,21 @@ const hostOf = (url) => new URL(url).hostname.replace(/^www\./, '');
 // developer.mozilla.org reads as "mozilla", the way people say it
 const siteName = (url) => hostOf(url).split('.').at(-2) ?? hostOf(url);
 
-// Sites thesvg.org turned out to have no logo for. Replies redraw often, and
-// this stops each redraw from asking for the same missing picture again.
-const noLogo = new Set();
+// Logos that failed to load, which means there is no internet. Replies redraw
+// often, and this stops each redraw from asking for the same picture again.
+const failed = new Set();
 
-// A round tile for a site: its brand logo from thesvg.org (MIT licensed, looked
-// up by name, so "mozilla" finds Mozilla's), or else the site's first letter on
-// a colour worked out from the name, so a site always gets the same one.
+// A round tile for a site: its brand logo from thesvg.org (MIT licensed) when
+// it has one, or else the site's first letter on a colour worked out from the
+// name, so a site always gets the same one.
 function favicon(source, extra = '') {
   const name = siteName(source.url);
+  const logo = logoFor(source.url);
   const hue = [...name].reduce((sum, ch) => (sum * 31 + ch.charCodeAt(0)) % 360, 0);
   const tile = (kind, inside) =>
-    `<span class="fav ${kind} ${extra}" data-site="${safe(name)}" style="--hue:${hue}" aria-hidden="true">${inside}</span>`;
-  if (noLogo.has(name)) return tile('', safe(name[0]));
-  return tile('logo', `<img src="https://thesvg.org/icons/${encodeURIComponent(name)}/default.svg" alt="">`);
+    `<span class="fav ${kind} ${extra}" data-letter="${safe(name[0])}" style="--hue:${hue}" aria-hidden="true">${inside}</span>`;
+  if (!logo || failed.has(logo)) return tile('', safe(name[0]));
+  return tile('logo', `<img src="https://thesvg.org/icons/${logo}/default.svg" data-logo="${logo}" alt="">`);
 }
 
 // The small pill that stands for source `n` inside the answer. Its preview card
@@ -303,14 +305,14 @@ function listen(li) {
     button.textContent = 'Copied';
     setTimeout(() => { button.textContent = 'Copy'; }, COPIED_MS);
   });
-  // A logo that fails to load (no such brand, or no internet) becomes a letter tile.
-  // "error" does not bubble, so the listener has to catch it on the way down (capture).
+  // A logo that fails to load becomes a letter tile. "error" does not bubble,
+  // so the listener has to catch it on the way down (capture).
   li.addEventListener('error', (event) => {
     const tile = event.target.closest?.('.fav.logo');
     if (!tile) return;
-    noLogo.add(tile.dataset.site);
+    failed.add(event.target.dataset.logo);
     tile.classList.remove('logo');
-    tile.textContent = tile.dataset.site[0];
+    tile.textContent = tile.dataset.letter;
   }, true);
   for (const type of ['pointerover', 'focusin']) {
     li.addEventListener(type, (event) => {
