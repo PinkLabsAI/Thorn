@@ -18,6 +18,13 @@ The first run compiles the Rust side and takes a few minutes. After that, change
 - `npm run build` makes `Thorn.app` and a `.dmg` in `src-tauri/target/release/bundle/`.
 - `npm test` runs the tests for the data logic in `src/store.js` and the markdown in `src/markdown.js`.
 
+## Keys
+
+- Enter sends, Shift+Enter starts a new line.
+- Cmd+N starts a new session, Cmd+K searches sessions, Cmd+B hides or shows the sidebar.
+- Escape closes a menu, search, or an edit in progress.
+- Sending `/fail` makes the sample reply break partway, to show what a failed reply looks like.
+
 ## Files
 
 - `src/index.html`, `src/styles.css`: the screen and its look. Colours are variables at the top of the CSS.
@@ -25,15 +32,18 @@ The first run compiles the Rust side and takes a few minutes. After that, change
 - `src/app.js`: draws the sidebar from that data and handles clicks.
 - `src/reply.js`, `src/reply.css`: an assistant reply in the chat: the status line, the web search with its sources, and the answer that streams in.
 - `src/markdown.js`: turns a reply's markdown text into HTML.
+- `src/logos.js`: finds the logo for a source's site.
 - `src/sample.js`: the scripted reply that stands in for a model. Connecting a real model means replacing this file's events with real ones.
 - `src-tauri/tauri.conf.json`: the window (size, title bar style) and app name.
 - `src-tauri/capabilities/default.json`: what the screen is allowed to ask the Mac to do.
-- `src-tauri/src/lib.rs`: the Rust entry point. It starts the app and loads the dialog plugin.
+- `src-tauri/src/lib.rs`: the Rust entry point. It starts the app and loads two plugins: one for the folder picker and confirm dialogs, one that opens web links in the browser.
 
 Projects and sessions are saved in the app's own `localStorage`, on this Mac only.
 
 ## Design
 
-The look follows the [unslop](https://github.com/heydamir/unslop) design guidelines by Damir Sokolovsky: one grey ramp with three text roles, spacing on a 4px grid, one line-icon set ([lucide](https://lucide.dev)) at one size, and weights 400 and 500 only.
+The look follows the [unslop](https://github.com/heydamir/unslop) design guidelines by Damir Sokolovsky: one grey ramp with three text roles, spacing on a 4px grid, one line-icon set ([lucide](https://lucide.dev)) at one size, and weights 400 and 500 only. Pink is the one accent, kept for the caret, the keyboard focus ring and the dot beside a reply that is arriving.
 
-Site logos in web search results are loaded from [theSVG](https://thesvg.org) (MIT licensed). `src/logos.js` lists every logo theSVG has and picks the one for a site, so only pictures that exist are asked for. A site it has no logo for, or any site while offline, shows its first letter instead. The logos themselves remain trademarks of their owners.
+The top bar and the sidebar are the Mac's own frosted material, and the chat is a solid surface set into them. Sizes, spacing and greys follow the Codex desktop app. That takes a see-through window, which Tauri only allows with `macOSPrivateApi` turned on in `src-tauri/tauri.conf.json`. Apps that use it cannot be sold on the Mac App Store, so Thorn is meant to be downloaded directly.
+
+Research results appear in a compact disclosure list with publisher logos and numbered citations in the answer. Clicking a source, a citation or a link opens it in the browser. Five logos ship with the app; any other site's logo is loaded from theSVG when it has one, and a globe is shown when it does not or the Mac is offline. The MDN, Tauri and Claude marks come from [theSVG](https://thesvg.org) ([MIT license](src/source-logos/LICENSE-theSVG.txt)). The web.dev favicon comes from [web.dev](https://web.dev/). The [WHATWG mark](https://resources.whatwg.org/logo.svg) comes from [WHATWG](https://whatwg.org/). The marks remain the property of their respective owners.

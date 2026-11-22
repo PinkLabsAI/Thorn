@@ -48,9 +48,14 @@ A model does not send its answer in one piece. It sends a few words at a time ov
 
 What the pieces on screen mean:
 
-- **The status line** says what the model is doing and for how long.
-- **The search pill** fills its ring as results land, and opens to show every source [2].
-- **Citations** like the one ending this sentence show their source when you point at them [3].
+- **The status line** says what the model is doing and how long it took.
+- **The search row** opens to show every source [2].
+- **Citations** like the one ending this sentence show their source when you point at them, and open it when clicked [3].
+
+| You do | Thorn does |
+| --- | --- |
+| Press the stop button | Keeps what has arrived so far |
+| Send \`/fail\` | Shows what a failed reply looks like |
 
 Reading a stream in JavaScript looks like this:
 
@@ -64,7 +69,8 @@ Each trip around that loop waits for the next event, then handles it. That is ho
 
 // An async generator: each `yield` hands over one event, and the function
 // pauses there until whoever is reading asks for the next one.
-export async function* sampleReply() {
+// Sending "/fail" makes the reply break partway, to show what a failed reply looks like.
+export async function* sampleReply(asked) {
   yield { status: 'thinking' };
   await wait(1600);
   yield { status: 'researching', query: 'how streamed replies work' };
@@ -75,8 +81,10 @@ export async function* sampleReply() {
   await wait(700);
   yield { status: 'writing' };
   // A model sends its text in bursts of a few words
-  for (const burst of TEXT.match(/(\S+\s*){1,10}/g)) {
+  const bursts = TEXT.match(/(\S+\s*){1,10}/g);
+  for (const [n, burst] of bursts.entries()) {
     await wait(140);
+    if (asked === '/fail' && n === 4) throw new Error('The connection to the model was lost.');
     yield { text: burst };
   }
 }
