@@ -16,7 +16,11 @@
   --hover: rgb(23 23 23 / 0.04);
   --current: rgb(23 23 23 / 0.08);
   --danger: #dc2626;
-  --accent: #ff4d8d; /* PinkLabs pink, kept for the thorn mark, the caret and the keyboard focus ring */
+  --accent: #ff4d8d; /* PinkLabs pink, kept for the caret, the keyboard focus ring and the dot beside a live reply */
+  /* Colours for code, see highlight() in markdown.js */
+  --t-keyword: #cf222e;
+  --t-string: #0a6c2f;
+  --t-number: #0550ae;
   --float: 0 8px 24px rgb(0 0 0 / 0.08);
   --field-shadow: 0 0 0 1px var(--hairline), 0 8px 24px rgb(0 0 0 / 0.06);
   --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -42,6 +46,9 @@
     --hover: rgb(237 237 237 / 0.05);
     --current: rgb(237 237 237 / 0.09);
     --danger: #e5484d;
+    --t-keyword: #ff7b72;
+    --t-string: #7ee787;
+    --t-number: #79c0ff;
     --float: none; /* in the dark, depth comes from the lighter surface, not a shadow */
     --field-shadow: none;
   }
@@ -63,7 +70,8 @@ body {
   background: var(--sidebar);
 }
 
-button, textarea, select { font: inherit; color: inherit; }
+button, textarea, select, input { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; cursor: pointer; }
 button { border: 0; padding: 0; background: none; text-align: left; }
 ul, ol { margin: 0; padding: 0; list-style: none; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -80,9 +88,6 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-
-/* Thorn's mark */
-.mark { flex: none; width: 16px; height: 16px; fill: var(--accent); }
 
 /* The window has no system title bar ("titleBarStyle": "Overlay"), so each pane
    draws its own strip at the top. Dragging a strip moves the window. */
@@ -169,6 +174,23 @@ li + li { margin-top: 1px; }
 button.row.label { width: 100%; flex: none; }
 .label > .i { color: var(--ink-3); }
 .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* The box a session's name is typed into while renaming it */
+.rename {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  margin: 0 4px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--field);
+  user-select: text;
+  -webkit-user-select: text;
+}
+/* "Today", "Yesterday" and so on, above each run of sessions */
+.day { margin: 8px 0 1px; padding: 0 8px; color: var(--ink-3); font-size: 12px; line-height: 20px; }
+.heading + .day { margin-top: 0; }
 
 /* Projects disclose their sessions in place. */
 .nav-section { margin-top: 12px; }
@@ -307,7 +329,6 @@ body.sidebar-hidden .chat-title { padding-left: 128px; }
   display: grid;
   justify-items: center;
 }
-.welcome .mark { width: 40px; height: 40px; margin-bottom: 20px; }
 .welcome h1 {
   margin: 0 0 8px;
   text-align: center;
@@ -351,17 +372,53 @@ kbd {
   gap: 24px;
 }
 .messages > li { flex: none; margin: 0; overflow-wrap: anywhere; }
-.messages > li:not(.reply) {
-  align-self: flex-end;
+/* Your own message: a bubble on the right, with copy and edit under it */
+.mine { display: grid; justify-items: end; gap: 4px; }
+.bubble {
   max-width: 80%;
   padding: 10px 16px;
   border-radius: 18px;
   background: var(--bubble);
   white-space: pre-wrap;
 }
+.mine.being-edited .bubble { box-shadow: inset 0 0 0 1px var(--ink-3); }
+.mine .actions { display: flex; opacity: 0; transition: opacity 150ms var(--ease); }
+.mine:hover .actions, .mine:focus-within .actions { opacity: 1; }
+.mine .actions .icon { margin: 0; }
 
 /* The composer is a raised card: depth comes from its fill and shadow, not an outline. */
-.compose-dock { flex: none; padding-top: 8px; padding-bottom: 16px; }
+.compose-dock { flex: none; position: relative; padding-top: 8px; padding-bottom: 16px; }
+
+/* Appears above the composer once the reader has scrolled away from the newest message */
+.jump {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--raised);
+  box-shadow: 0 0 0 1px var(--hairline), var(--float);
+  color: var(--ink-2);
+}
+.jump:not([hidden]) { display: grid; }
+.jump:hover { color: var(--ink); }
+
+.editing {
+  margin: 0;
+  padding: 0 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 16px;
+}
+.editing:not([hidden]) { display: flex; }
+.editing button { flex: none; padding: 4px 8px; border-radius: 6px; color: var(--ink-2); }
+.editing button:hover { background: var(--hover); color: var(--ink); }
 .composer {
   display: grid;
   gap: 8px;
@@ -437,6 +494,60 @@ kbd {
   font-size: 12px;
   line-height: 16px;
 }
+
+/* ---------- Search ---------- */
+
+#search {
+  width: min(560px, calc(100vw - 64px));
+  max-height: 60vh;
+  margin-top: 96px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--raised);
+  color: var(--ink);
+  box-shadow: var(--float);
+}
+#search[open] { display: flex; flex-direction: column; }
+#search::backdrop { background: rgb(0 0 0 / 0.2); }
+#search input {
+  flex: none;
+  height: 48px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 1px solid var(--hairline);
+  outline: 0; /* typing always goes here while search is open */
+  caret-color: var(--accent);
+  background: transparent;
+  font-size: 15px;
+}
+#search input::-webkit-search-cancel-button { display: none; }
+#search ul { overflow-y: auto; padding: 4px; }
+#search .label { justify-content: space-between; }
+#search [aria-selected="true"] { background: var(--current); }
+.where { flex: none; color: var(--ink-3); font-size: 12px; }
+
+/* ---------- Undo message ---------- */
+
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 3;
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 12px;
+  padding: 4px 4px 4px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow: var(--float);
+  font-size: 13px;
+}
+#toast:not([hidden]) { display: flex; }
+#toast button { height: 24px; padding: 0 8px; border-radius: 4px; font-weight: 500; }
+#toast button:hover { background: var(--hover); }
 
 @media (max-width: 840px) {
   .messages, .compose-dock, .welcome { padding-inline: 20px; }

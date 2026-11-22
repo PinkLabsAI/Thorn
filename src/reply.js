@@ -2,6 +2,7 @@
 // playReply shows one live as its events arrive; drawReply shows a finished one.
 
 import { toHtml, safe } from './markdown.js';
+import { logoFor } from './logos.js';
 
 // Line icons from the lucide set, as in app.js
 const svg = (name, shape) => `<svg class="i ${name}" viewBox="0 0 24 24" aria-hidden="true">${shape}</svg>`;
@@ -33,21 +34,28 @@ const sourceLogos = new Map([
   ['html.spec.whatwg.org', 'whatwg.svg'],
 ]);
 
-function sourceLogo(host) {
-  const asset = sourceLogos.get(host);
-  const mark = asset ? `<img src="./source-logos/${asset}" width="16" height="16" alt="">` : ICONS.globe;
+// Logos that failed to load, for example while offline. Replies redraw often,
+// and remembering these stops the same missing picture being asked for each time.
+const failedLogos = new Set();
+
+// A site's logo: one of the files that ship with Thorn, or else theSVG's logo
+// for that site (thesvg.org, MIT licensed), or else a plain globe.
+function sourceLogo(url) {
+  const asset = sourceLogos.get(hostOf(url));
+  const name = asset ? null : logoFor(url);
+  const src = asset ? `./source-logos/${asset}` : name && `https://thesvg.org/icons/${name}/default.svg`;
+  const mark = src && !failedLogos.has(src) ? `<img src="${src}" width="16" height="16" alt="">` : ICONS.globe;
   return `<span class="source-logo" aria-hidden="true">${mark}</span>`;
 }
 
 function citation(source, n) {
-  const host = hostOf(source.url);
-  return `<span class="cite" tabindex="0" aria-label="Source ${n}: ${safe(source.title)}">${n}
+  return `<a class="cite" href="${safe(source.url)}" aria-label="Source ${n}: ${safe(source.title)}">${n}
     <span class="preview" role="tooltip">
-      <span class="site">${sourceLogo(host)}${safe(host)}</span>
+      <span class="site">${sourceLogo(source.url)}${safe(hostOf(source.url))}</span>
       <span class="title">${safe(source.title)}</span>
       <span class="snippet">${safe(source.snippet)}</span>
     </span>
-  </span>`;
+  </a>`;
 }
 
 // Keeps a citation's preview inside the reply instead of running off the edge,
@@ -71,8 +79,9 @@ function statusLine() {
     show(state) {
       el.innerHTML = `<span class="working-dot" aria-hidden="true"></span>${LABELS[state]}…`;
     },
-    done(total) {
-      el.textContent = `Worked for ${elapsed(total)}`;
+    done(message) {
+      el.textContent = message.error ? 'Interrupted'
+        : `${message.stopped ? 'Stopped after' : 'Worked for'} ${elapsed(message.seconds)}`;
     },
   };
 }
@@ -89,17 +98,16 @@ function webSearch(sources, query, live) {
   function draw() {
     const count = sources.length;
     label.textContent = searching ? `Searching “${query}”` : `Searched ${count} ${count === 1 ? 'source' : 'sources'}`;
-    list.innerHTML = sources.map((source, index) => {
-      const host = hostOf(source.url);
-      return `<li class="source">
-        <span class="source-index">${index + 1}</span>
-        ${sourceLogo(host)}
-        <span class="source-info">
-          <span class="source-title">${safe(source.title)}</span>
-          <span class="source-host">${safe(host)}</span>
-        </span>
-      </li>`;
-    }).join('');
+    list.innerHTML = sources.map((source, index) => `<li>
+        <a class="source" href="${safe(source.url)}">
+          <span class="source-index">${index + 1}</span>
+          ${sourceLogo(source.url)}
+          <span class="source-info">
+            <span class="source-title">${safe(source.title)}</span>
+            <span class="source-host">${safe(hostOf(source.url))}</span>
+          </span>
+        </a>
+      </li>`).join('');
   }
 
   draw();
@@ -143,6 +151,13 @@ function listen(li) {
     button.textContent = 'Copied';
     setTimeout(() => { button.textContent = 'Copy'; }, COPIED_MS);
   });
+  // A picture that fails to load does not bubble its "error" event, so this
+  // listens on the way down (capture) and swaps in the globe.
+  li.addEventListener('error', (event) => {
+    if (!event.target.matches('.source-logo img')) return;
+    failedLogos.add(event.target.src);
+    event.target.outerHTML = ICONS.globe;
+  }, true);
   for (const type of ['pointerover', 'focusin']) {
     li.addEventListener(type, (event) => {
       const cite = event.target.closest('.cite');
@@ -153,70 +168,87 @@ function listen(li) {
 
 const citeFrom = (sources) => (n) => sources[n - 1] && citation(sources[n - 1], n);
 
-// Draws a finished reply, such as one from an earlier visit, with nothing animating.
+// A reply that was stopped or failed is shown as far as it got, so markers
+// left open in its text (like ** with no partner) are treated as closed.
+const answerHtml = (message) => toHtml(message.text, {
+  cite: citeFrom(message.sources),
+  streaming: Boolean(message.stopped || message.error),
+});
+
+// What goes under a reply once it has ended: why it failed, if it did, then copy and retry.
+function ending(message, onRetry) {
+  const parts = [actions(message, onRetry)];
+  if (message.error) parts.unshift(element(`<p class="reply-error" role="alert">${safe(message.error)}</p>`));
+  return parts;
+}
+
+// Draws a reply that has ended, such as one from an earlier visit, with nothing animating.
 // `onRetry` adds a retry button; leave it out for replies that cannot be retried.
 export function drawReply(li, message, onRetry) {
   const status = statusLine();
-  status.done(message.seconds);
+  status.done(message);
   li.append(status.el);
-  if (message.sources.length) {
-    const search = webSearch(message.sources, message.query, false);
-    li.append(search.el);
-  }
+  if (message.sources.length) li.append(webSearch(message.sources, message.query, false).el);
   const answer = element('<div class="answer"></div>');
-  answer.innerHTML = toHtml(message.text, { cite: citeFrom(message.sources) });
-  li.append(answer, actions(message, onRetry));
+  answer.innerHTML = answerHtml(message);
+  li.append(answer, ...ending(message, onRetry));
   listen(li);
 }
 
 // Plays a reply into `li` as its events arrive (see sample.js for the events).
-// `finished` resolves to the complete message, or to null if stop() cut it short.
+// A reply ends in one of three ways: it finishes, stop() is called, or reading
+// its events fails. Each time the message is complete as far as it got, marked
+// `stopped` or carrying an `error`. `finished` resolves to it, and stop() returns it.
 export function playReply(li, events, onRetry) {
   const message = { from: 'assistant', text: '', query: '', sources: [], seconds: 0 };
   const status = statusLine();
   const answer = element('<div class="answer"></div>');
   const cite = citeFrom(message.sources);
   let search = null;
-  let stopped = false;
+  let ended = false;
   li.append(status.el, answer);
   listen(li);
 
-  async function play() {
-    // "for await" waits for each event in turn without freezing the window
-    for await (const event of events) {
-      if (stopped) return null;
-      if (event.status) {
-        if (event.query) {
-          message.query = event.query;
-          search = webSearch(message.sources, message.query, true);
-          status.el.after(search.el);
-        } else {
-          search?.done(); // moving on from researching means the search is over
-        }
-        status.show(event.status);
-      }
-      if (event.source) {
-        message.sources.push(event.source);
-        search.draw();
-      }
-      if (event.text) {
-        message.text += event.text;
-        answer.innerHTML = toHtml(message.text, { cite, streaming: true });
-      }
-    }
-    if (stopped) return null;
+  function end(how = {}) {
+    if (ended) return message;
+    ended = true;
+    Object.assign(message, how, { seconds: status.seconds() });
     search?.done();
-    answer.innerHTML = toHtml(message.text, { cite });
-    message.seconds = status.seconds();
-    status.done(message.seconds);
-    li.append(actions(message, onRetry));
+    answer.innerHTML = answerHtml(message);
+    status.done(message);
+    li.append(...ending(message, onRetry));
     return message;
   }
 
-  return {
-    finished: play(),
-    stop() {
-      stopped = true;
-    },
-  };
+  async function play() {
+    try {
+      // "for await" waits for each event in turn without freezing the window
+      for await (const event of events) {
+        if (ended) break; // leaving the loop also tells the source of the events to stop
+        if (event.status) {
+          if (event.query) {
+            message.query = event.query;
+            search = webSearch(message.sources, message.query, true);
+            status.el.after(search.el);
+          } else {
+            search?.done(); // moving on from researching means the search is over
+          }
+          status.show(event.status);
+        }
+        if (event.source) {
+          message.sources.push(event.source);
+          search.draw();
+        }
+        if (event.text) {
+          message.text += event.text;
+          answer.innerHTML = toHtml(message.text, { cite, streaming: true });
+        }
+      }
+    } catch (error) {
+      return end({ error: error.message || 'Something went wrong.' });
+    }
+    return end();
+  }
+
+  return { finished: play(), stop: () => end({ stopped: true }) };
 }
