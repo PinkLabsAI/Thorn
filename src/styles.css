@@ -114,7 +114,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 #sidebar .scroll { flex: 1; min-height: 0; overflow-y: auto; }
 
 /* Settings sits at the bottom left, and its menu opens upwards */
-.foot { flex: none; position: relative; padding-top: 8px; }
+.foot { flex: none; position: relative; padding: 8px 0 0 4px; } /* 4px in, so the gear sits in the rows' icon column */
 .foot .menu { top: auto; bottom: calc(100% + 4px); left: 0; right: auto; }
 .menu-title { display: block; padding: 4px 8px; color: var(--ink-3); font-size: 12px; line-height: 16px; }
 
