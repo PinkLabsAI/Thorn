@@ -40,12 +40,16 @@
 }
 .source {
   display: grid;
+  margin-inline: -4px;
+  padding-inline: 4px;
+  border-radius: 6px;
   grid-template-columns: 16px 24px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   min-height: 40px;
 }
-.source + .source { margin-top: 0; }
+.source:hover { background: var(--hover); }
+.sources li + li { margin-top: 0; }
 .source-index { text-align: right; }
 .source-index, .source-host { color: var(--ink-3); }
 .source-index, .cite, .status { font-variant-numeric: tabular-nums; }
@@ -104,6 +108,23 @@
 .code-top button { padding: 4px 8px; border-radius: 6px; font: 12px/16px -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
 .code-top button:hover { background: var(--current); color: var(--ink); }
 .code pre { padding: 0 16px 16px; overflow-x: auto; }
+.t-comment { color: var(--ink-3); }
+.t-keyword { color: var(--t-keyword); }
+.t-string { color: var(--t-string); }
+.t-number { color: var(--t-number); }
+
+/* Lists inside lists sit closer to the item they belong to */
+.answer li > :is(ul, ol) { margin-top: 8px; }
+.answer li > ul { list-style: circle; }
+
+.table { overflow-x: auto; border: 1px solid var(--hairline); border-radius: 12px; }
+.answer table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px; }
+.answer :is(th, td) { padding: 8px 16px; text-align: left; vertical-align: top; }
+.answer th { font-weight: 500; background: var(--hover); }
+.answer td { border-top: 1px solid var(--hairline); }
+
+/* Why a reply stopped short */
+.reply-error { margin: 0; color: var(--danger); font-size: 14px; line-height: 20px; }
 
 /* ---------- Citations ---------- */
 
@@ -120,7 +141,7 @@
   font-size: 11px;
   line-height: 1;
   vertical-align: 0.15em;
-  cursor: default;
+  cursor: pointer;
 }
 .cite + .cite { margin-left: 4px; }
 .cite:hover, .cite:focus-visible { background: var(--current); color: var(--ink); }
@@ -159,7 +180,7 @@
 .preview .site, .preview .snippet { font-size: 12px; line-height: 16px; }
 
 /* Copy and retry */
-.actions { display: flex; gap: 4px; margin-left: -4px; }
+.reply .actions { display: flex; gap: 4px; margin-left: -4px; }
 
 @media (prefers-reduced-motion: reduce) {
   .reply *, .reply *::after { transition: none !important; }

@@ -15,6 +15,13 @@
   <!-- Drag this edge to resize the sidebar; double-click to reset it -->
   <div id="resizer" role="separator" aria-orientation="vertical" aria-label="Resize sidebar"></div>
   <main id="chat"></main>
+  <!-- Search (⌘K). <dialog> is the browser's built-in pop-up: Escape closes it. -->
+  <dialog id="search" aria-label="Search sessions">
+    <input type="search" placeholder="Search sessions" aria-label="Search sessions">
+    <ul></ul>
+  </dialog>
+  <!-- A short message with an Undo button, shown after a delete -->
+  <div id="toast" role="status" hidden></div>
   <script type="module" src="app.js"></script>
 </body>
 </html>

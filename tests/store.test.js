@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   STORAGE_KEY, newState, load, addProject, addSession, removeSession, removeProject, addMessage, addReply, removeLastReply,
+  cutMessages, renameSession, groupByDay, searchSessions,
   setSidebarWidth,
 } from '../src/store.js';
 
@@ -27,6 +28,7 @@ test('removing a project removes its sessions and keeps the others', () => {
 test('removing a session closes it only if it was the open one', () => {
   const state = newState();
   const first = addSession(state);
+  addMessage(state, first.id, 'hello'); // an empty session would be reused instead of joined by a second
   const second = addSession(state); // open
 
   removeSession(state, first.id);
@@ -92,4 +94,70 @@ test('retrying removes the latest reply but never a message the user wrote', () 
 test('saved data from before a setting existed still gets that setting', () => {
   const storage = { getItem: () => JSON.stringify({ projects: [], sessions: [] }) };
   assert.equal(load(storage).theme, 'system');
+});
+
+test('asking for a new session twice reuses the empty one', () => {
+  const state = newState();
+  const first = addSession(state);
+  assert.equal(addSession(state), first);
+  addMessage(state, first.id, 'hello');
+  assert.notEqual(addSession(state), first);
+  assert.equal(state.sessions.length, 2);
+});
+
+test('a reply for a session that was deleted meanwhile is dropped', () => {
+  const state = newState();
+  const session = addSession(state);
+  removeSession(state, session.id);
+  addReply(state, session.id, { from: 'assistant', text: 'late' }); // must not throw
+  assert.deepEqual(state.sessions, []);
+});
+
+test('editing a message removes it and everything after it', () => {
+  const state = newState();
+  const session = addSession(state);
+  addMessage(state, session.id, 'one');
+  addReply(state, session.id, { from: 'assistant', text: 'reply' });
+  addMessage(state, session.id, 'two');
+  cutMessages(state, session.id, 2);
+  assert.deepEqual(session.messages.map((m) => m.text), ['one', 'reply']);
+});
+
+test('renaming trims the name and ignores a blank one', () => {
+  const state = newState();
+  const session = addSession(state);
+  renameSession(state, session.id, '  Plans  ');
+  renameSession(state, session.id, '   ');
+  assert.equal(session.title, 'Plans');
+});
+
+test('sessions are grouped by the day they were last used, newest first', () => {
+  const now = new Date(2026, 10, 22, 15).getTime(); // 3 PM
+  const hours = (n) => now - n * 60 * 60 * 1000;
+  const sessions = [
+    { id: 'old' }, // saved before sessions had a time
+    { id: 'yesterday', updatedAt: hours(20) },
+    { id: 'morning', updatedAt: hours(6) },
+    { id: 'just-now', updatedAt: hours(0) },
+    { id: 'this-week', updatedAt: hours(24 * 4) },
+  ];
+  assert.deepEqual(groupByDay(sessions, now).map((g) => [g.label, g.sessions.map((s) => s.id)]), [
+    ['Today', ['just-now', 'morning']],
+    ['Yesterday', ['yesterday']],
+    ['Previous 7 days', ['this-week']],
+    ['Older', ['old']],
+  ]);
+});
+
+test('search looks in titles and messages, ignoring case and empty sessions', () => {
+  const state = newState();
+  const a = addSession(state);
+  addMessage(state, a.id, 'Fix the Sidebar');
+  const b = addSession(state);
+  addMessage(state, b.id, 'hello');
+  addReply(state, b.id, { from: 'assistant', text: 'The sidebar is fine' });
+  addSession(state); // empty
+  assert.deepEqual(searchSessions(state, 'SIDEBAR').map((s) => s.id).sort(), [a.id, b.id].sort());
+  assert.deepEqual(searchSessions(state, 'hello'), [b]);
+  assert.equal(searchSessions(state, '').length, 2);
 });
