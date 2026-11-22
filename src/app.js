@@ -32,6 +32,8 @@ const ICONS = {
   send: '<path d="M12 19V5m-6 6 6-6 6 6"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
 };
+// Thorn's own mark: a single thorn, filled with the accent colour.
+const MARK = '<svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20.5C10 18.5 14.5 12 16 3c.8 7 2 12.5 4.5 17.5Z"/></svg>';
 const icon = (name) => `<svg class="i ${name}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 
 // A three-dot button followed by its menu. The menu starts hidden.
@@ -79,7 +81,7 @@ function drawSidebar() {
   const standalone = state.sessions.filter((session) => !session.projectId);
   sidebar.innerHTML = `
     <div class="titlebar" data-tauri-drag-region></div>
-    <header class="brand">Thorn</header>
+    <header class="brand">${MARK}Thorn</header>
     <button class="row label new-session" data-action="new-session">${icon('plus')}New session</button>
     <section class="nav-section" aria-labelledby="projects-label">
       <header class="heading">
@@ -112,7 +114,7 @@ function composer(project, hasMessages) {
       <button class="send-button" aria-label="Send message" title="Send message" disabled>${icon('send')}</button>
     </div>
   </form>
-  <p class="notice" title="Replies are scripted in this preview">Demo mode</p>`;
+  <p class="notice">Demo mode. Replies are scripted until a model is connected.</p>`;
 }
 
 function drawChat() {
@@ -130,7 +132,7 @@ function drawChat() {
       <div class="compose-dock">${composer(project, true)}</div>
     ` : `
       <div class="welcome">
-        <h1>Start a Thorn session</h1>
+        ${MARK}<h1>What are we working on?</h1>
         ${composer(project, false)}
       </div>
     `}`;

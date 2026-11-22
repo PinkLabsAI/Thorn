@@ -1,9 +1,11 @@
 /* Colours are one grey ramp with three text roles and one accent.
    Spacing sits on a 4px grid, and rows share one height. */
 :root {
-  --sidebar: #fafafa;
+  --sidebar: rgb(255 255 255 / 0.3); /* a light wash over the Mac's own frosted sidebar material */
   --window: #ffffff;
   --raised: #ffffff; /* menus */
+  --field: #ffffff; /* the composer */
+  --bubble: #f1f1f2; /* your own messages */
   --ink: #171717; /* primary text */
   --ink-2: #525252; /* secondary text */
   --ink-3: #737373; /* muted text and icons */
@@ -11,34 +13,40 @@
   --hover: rgb(23 23 23 / 0.04);
   --current: rgb(23 23 23 / 0.08);
   --danger: #dc2626;
-  --accent: #ff4d8d; /* PinkLabs pink, kept for the keyboard focus ring only */
+  --accent: #ff4d8d; /* PinkLabs pink: the thorn mark, the send button and the keyboard focus ring */
   --float: 0 8px 24px rgb(0 0 0 / 0.08);
-  --outline: rgb(23 23 23 / 0.15);
+  --field-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), 0 2px 6px rgb(0 0 0 / 0.05), 0 8px 24px rgb(0 0 0 / 0.05);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --row: 32px;
-  --titlebar: 28px; /* height of a Mac title bar, so it lines up with the window buttons */
+  --row: 28px;
+  --titlebar: 48px; /* the strip that holds the window buttons; see trafficLightPosition in tauri.conf.json */
   color-scheme: light dark;
 }
 
 /* Follows the Mac's Light/Dark appearance setting */
 @media (prefers-color-scheme: dark) {
   :root {
-    --sidebar: #0f0f10;
-    --window: #141415;
-    --raised: #232325;
-    --ink: #ededed;
-    --ink-2: #a1a1a6;
-    --ink-3: #85858b;
+    --sidebar: rgb(0 0 0 / 0.18);
+    --window: #1b1b1d;
+    --raised: #2a2a2d;
+    --field: #262629;
+    --bubble: #2a2a2d;
+    --ink: #ececee;
+    --ink-2: #b4b4ba;
+    --ink-3: #8b8b92;
     --hairline: rgb(237 237 237 / 0.08);
     --hover: rgb(237 237 237 / 0.04);
     --current: rgb(237 237 237 / 0.08);
     --danger: #e5484d;
-    --outline: rgb(237 237 237 / 0.16);
     --float: none; /* in the dark, depth comes from the lighter surface, not a shadow */
+    --field-shadow: 0 0 0 1px rgb(255 255 255 / 0.07), 0 8px 24px rgb(0 0 0 / 0.25);
   }
 }
 
 * { box-sizing: border-box; }
+
+/* The page itself is see-through, so the Mac's frosted material shows behind
+   the sidebar. The chat pane paints its own solid background. */
+html, body { background: transparent; }
 
 body {
   margin: 0;
@@ -47,7 +55,6 @@ body {
   overflow: hidden; /* the panes scroll, the window does not */
   font: 14px/20px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   color: var(--ink);
-  background: var(--window);
 }
 
 button, textarea, select { font: inherit; color: inherit; }
@@ -67,6 +74,9 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   stroke-linejoin: round;
 }
 
+/* Thorn's mark */
+.mark { flex: none; width: 16px; height: 16px; fill: var(--accent); }
+
 /* The window has no system title bar ("titleBarStyle": "Overlay"), so each pane
    draws its own strip at the top. Dragging a strip moves the window. */
 .titlebar { flex: none; height: var(--titlebar); }
@@ -76,28 +86,29 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 #sidebar {
   flex: none;
   width: var(--sidebar-width, 240px); /* set from app.js when the edge is dragged */
-  padding: 0 12px 12px;
+  padding: 0 8px 12px;
   overflow-y: auto;
   background: var(--sidebar);
   border-right: 1px solid var(--hairline);
+  font-size: 13px; /* the size Mac sidebars use */
+  line-height: 18px;
   /* App chrome should not highlight like text on a web page */
   user-select: none;
   -webkit-user-select: none;
   cursor: default;
 }
 
-/* The app name sits beneath the system window controls. */
 .brand {
   display: flex;
   align-items: center;
-  height: 40px;
+  gap: 8px;
+  height: 32px;
   padding: 0 8px;
-  font-size: 16px;
   font-weight: 500;
 }
 
 /* Hide/show button, fixed beside the red, yellow and green window buttons */
-#toggle-sidebar { position: fixed; top: 2px; left: 78px; z-index: 2; }
+#toggle-sidebar { position: fixed; top: 12px; left: 88px; z-index: 2; }
 
 /* The sidebar stays in layout while dragging past its minimum width. */
 #sidebar { margin-left: var(--sidebar-shift, 0px); }
@@ -127,7 +138,8 @@ body.sidebar-hidden #resizer { margin: 0 -8px 0 0; }
 }
 .row:hover { background: var(--hover); }
 .row[aria-current="true"] { background: var(--current); }
-li + li { margin-top: 2px; }
+.row[aria-current="true"] .text { color: var(--ink); font-weight: 500; }
+li + li { margin-top: 1px; }
 
 .label {
   flex: 1;
@@ -144,48 +156,48 @@ button.row.label { width: 100%; flex: none; }
 .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Projects disclose their sessions in place. */
-.nav-section { margin-top: 20px; }
+.nav-section { margin-top: 16px; }
+.nav-section li .text { color: var(--ink-2); }
 summary { list-style: none; }
 summary::-webkit-details-marker { display: none; }
-summary + ul { margin-top: 2px; padding-left: 16px; }
+summary .label { font-weight: 500; }
+summary + ul { margin-top: 1px; padding-left: 24px; } /* session names line up under the project's name */
 .chevron { transition: transform 150ms var(--ease); }
 details[open] > summary .chevron { transform: rotate(90deg); }
 .heading {
-  min-height: 28px;
+  min-height: 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 4px 0 8px;
   color: var(--ink-3);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
+  letter-spacing: 0.02em;
 }
-.empty-row { padding: 4px 8px; color: var(--ink-3); font-size: 13px; }
-.new-session { background: var(--hover); font-weight: 500; }
-.new-session:hover { background: var(--current); }
-.nav-section .dots, .nav-section summary .icon { opacity: 0; }
-.nav-section .row:hover > :is(.dots, .icon),
-.nav-section .row:focus-within > :is(.dots, .icon),
-.nav-section .dots:has([aria-expanded="true"]) { opacity: 1; }
-
-.icon { margin-right: 4px; } /* same column as the three dots below it */
-.empty-row { height: var(--row); padding: 0 8px; display: flex; align-items: center; color: var(--ink-3); }
-
-.tag {
-  flex: none;
-  margin-left: auto;
+.empty-row {
+  height: var(--row);
   padding: 0 8px;
-  border: 1px solid var(--hairline);
-  border-radius: 6px;
+  display: flex;
+  align-items: center;
   color: var(--ink-3);
   font-size: 12px;
-  font-weight: 400;
 }
+
+/* A row's buttons take up no room until the row is pointed at or focused,
+   so its title gets the full width the rest of the time. */
+.nav-section .row > :is(.dots, .icon) { display: none; }
+.nav-section .row:hover > .dots,
+.nav-section .row:focus-within > .dots,
+.nav-section .dots:has([aria-expanded="true"]) { display: block; }
+.nav-section .row:hover > .icon,
+.nav-section .row:focus-within > .icon { display: grid; }
 
 .icon {
   flex: none;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
+  margin-right: 2px;
   display: grid;
   place-items: center;
   border-radius: 6px;
@@ -196,7 +208,7 @@ details[open] > summary .chevron { transform: rotate(90deg); }
 
 /* ---------- Three-dot menus ---------- */
 
-.dots { position: relative; flex: none; margin: 0 4px; }
+.dots { position: relative; flex: none; margin-right: 3px; }
 
 .menu {
   position: absolute;
@@ -209,7 +221,7 @@ details[open] > summary .chevron { transform: rotate(90deg); }
   border: 1px solid var(--hairline);
   border-radius: 8px;
   box-shadow: var(--float);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 400;
   color: var(--ink);
 }
@@ -234,76 +246,91 @@ details[open] > summary .chevron { transform: rotate(90deg); }
   min-width: 0;
   display: flex;
   flex-direction: column;
+  background: var(--window);
 }
 
-/* One shared reading column aligns the title, transcript and composer. */
-.chat-title, .messages, .compose-dock, .welcome {
+/* One shared reading column aligns the transcript and composer. */
+.messages, .compose-dock, .welcome {
   width: 100%;
   max-width: 784px;
   margin-inline: auto;
   padding-inline: 32px;
 }
 
+/* The session title sits in the window's top strip, level with the window
+   buttons. It is pulled up over the empty .titlebar strip above it. */
 .chat-title {
   flex: none;
   display: flex;
   align-items: center;
-  height: 40px;
-  color: var(--ink-2);
+  height: var(--titlebar);
+  margin-top: calc(-1 * var(--titlebar));
+  padding-inline: 20px;
+  border-bottom: 1px solid var(--hairline);
   font-size: 13px;
   font-weight: 500;
+  pointer-events: none; /* clicks fall through to the strip, so it still drags the window */
 }
+/* With the sidebar hidden, the window buttons sit over this strip's left end */
+body.sidebar-hidden .chat-title { padding-left: 128px; }
 
-.welcome { margin-block: auto; padding-bottom: var(--titlebar); }
+.welcome {
+  margin-block: auto;
+  padding-bottom: var(--titlebar);
+  display: grid;
+  justify-items: center;
+}
+.welcome .mark { width: 36px; height: 36px; margin-bottom: 16px; }
 .welcome h1 {
-  margin: 0 0 24px;
-  color: var(--ink);
+  margin: 0 0 28px;
   text-align: center;
-  font-size: clamp(22px, 3.4vw, 30px);
+  font-size: 26px;
   line-height: 1.2;
   font-weight: 500;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.02em;
 }
+.welcome .composer, .welcome .notice { width: 100%; }
 
 .messages {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-block: 12px 24px;
+  padding-block: 28px 32px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 .messages > li { flex: none; margin: 0; overflow-wrap: anywhere; }
 .messages > li:not(.reply) {
   align-self: flex-end;
   max-width: 80%;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: var(--hover);
+  padding: 8px 14px;
+  border-radius: 18px;
+  background: var(--bubble);
   white-space: pre-wrap;
 }
 
+/* The composer is a raised card: depth comes from its fill and shadow, not an outline. */
 .compose-dock { flex: none; padding-top: 8px; padding-bottom: 12px; }
 .composer {
   display: grid;
-  gap: 4px;
-  padding: 8px;
-  border: 1px solid var(--outline);
-  border-radius: 12px;
-  background: var(--window);
+  gap: 6px;
+  padding: 12px 10px 10px 14px;
+  border-radius: 18px;
+  background: var(--field);
+  box-shadow: var(--field-shadow);
 }
-.composer:focus-within { border-color: var(--ink-3); }
-.composer:has(textarea:focus-visible) { outline: 1px solid var(--accent); outline-offset: 1px; }
 .composer textarea {
   display: block;
   width: 100%;
-  min-height: 40px;
+  min-height: 44px;
   max-height: 120px;
-  padding: 2px 4px;
+  padding: 0;
   border: 0;
-  outline: 0;
+  outline: 0; /* the blinking caret already shows where typing goes */
   background: transparent;
+  font-size: 15px;
+  line-height: 22px;
   resize: none;
 }
 .composer textarea::placeholder { color: var(--ink-3); }
@@ -319,31 +346,42 @@ details[open] > summary .chevron { transform: rotate(90deg); }
   align-items: center;
   min-width: 0;
   gap: 6px;
-  padding-inline: 4px;
-  font-size: 12px;
+  height: 28px;
+  margin-left: -6px;
+  padding-inline: 8px;
+  border-radius: 8px;
+  font-size: 13px;
   color: var(--ink-2);
 }
+.project-picker:hover, .project-picker:focus-within { background: var(--hover); }
 .project-picker select {
   min-width: 0;
   max-width: 180px;
   border: 0;
-  border-radius: 4px;
-  background: var(--window);
+  outline: 0;
+  background: transparent;
+  appearance: none; /* drop the system's own arrows and box */
+  -webkit-appearance: none;
+  cursor: default;
 }
 .send-button {
   flex: none;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   margin-left: auto;
-  border-radius: 8px;
-  background: var(--ink);
-  color: var(--window);
+  border-radius: 50%;
+  background: var(--accent);
+  color: #ffffff;
+  transition: background-color 150ms var(--ease), transform 150ms var(--ease);
 }
+.send-button .i { stroke-width: 2; }
+.send-button:focus-visible { outline-offset: 2px; }
+.send-button:not(:disabled):active { transform: scale(0.94); }
 .send-button:disabled { background: var(--current); color: var(--ink-3); }
 .notice {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   text-align: center;
   color: var(--ink-3);
   font-size: 11px;
@@ -351,5 +389,5 @@ details[open] > summary .chevron { transform: rotate(90deg); }
 }
 
 @media (max-width: 840px) {
-  .chat-title, .messages, .compose-dock, .welcome { padding-inline: 20px; }
+  .messages, .compose-dock, .welcome { padding-inline: 20px; }
 }
