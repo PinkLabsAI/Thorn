@@ -55,12 +55,20 @@ const hostOf = (url) => new URL(url).hostname.replace(/^www\./, '');
 // developer.mozilla.org reads as "mozilla", the way people say it
 const siteName = (url) => hostOf(url).split('.').at(-2) ?? hostOf(url);
 
-// A round tile with the site's first letter. Its colour is worked out from the
-// name, so a site always gets the same one.
+// Sites thesvg.org turned out to have no logo for. Replies redraw often, and
+// this stops each redraw from asking for the same missing picture again.
+const noLogo = new Set();
+
+// A round tile for a site: its brand logo from thesvg.org (MIT licensed, looked
+// up by name, so "mozilla" finds Mozilla's), or else the site's first letter on
+// a colour worked out from the name, so a site always gets the same one.
 function favicon(source, extra = '') {
   const name = siteName(source.url);
   const hue = [...name].reduce((sum, ch) => (sum * 31 + ch.charCodeAt(0)) % 360, 0);
-  return `<span class="fav ${extra}" style="--hue:${hue}" aria-hidden="true">${safe(name[0])}</span>`;
+  const tile = (kind, inside) =>
+    `<span class="fav ${kind} ${extra}" data-site="${safe(name)}" style="--hue:${hue}" aria-hidden="true">${inside}</span>`;
+  if (noLogo.has(name)) return tile('', safe(name[0]));
+  return tile('logo', `<img src="https://thesvg.org/icons/${encodeURIComponent(name)}/default.svg" alt="">`);
 }
 
 // The small pill that stands for source `n` inside the answer. Its preview card
@@ -295,6 +303,15 @@ function listen(li) {
     button.textContent = 'Copied';
     setTimeout(() => { button.textContent = 'Copy'; }, COPIED_MS);
   });
+  // A logo that fails to load (no such brand, or no internet) becomes a letter tile.
+  // "error" does not bubble, so the listener has to catch it on the way down (capture).
+  li.addEventListener('error', (event) => {
+    const tile = event.target.closest?.('.fav.logo');
+    if (!tile) return;
+    noLogo.add(tile.dataset.site);
+    tile.classList.remove('logo');
+    tile.textContent = tile.dataset.site[0];
+  }, true);
   for (const type of ['pointerover', 'focusin']) {
     li.addEventListener(type, (event) => {
       const cite = event.target.closest('.cite');

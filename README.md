@@ -35,3 +35,5 @@ Projects and sessions are saved in the app's own `localStorage`, on this Mac onl
 ## Design
 
 The look follows the [unslop](https://github.com/heydamir/unslop) design guidelines by Damir Sokolovsky: one grey ramp with three text roles, spacing on a 4px grid, one line-icon set ([lucide](https://lucide.dev)) at one size, and weights 400 and 500 only.
+
+Site logos in web search results are loaded from [theSVG](https://thesvg.org) (MIT licensed) by the site's name. A site it has no logo for, or any site while offline, shows its first letter instead. The logos themselves remain trademarks of their owners.
