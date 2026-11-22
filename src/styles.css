@@ -1,52 +1,49 @@
 /* Colours are one grey ramp with three text roles and one accent.
    Spacing sits on a 4px grid, and rows share one height. */
 :root {
-  /* The whole window is the Mac's frosted material. The sidebar is that
-     material with a thin wash, and the chat is a rounded panel resting on it
-     with a slightly thicker wash, so the two stay close in tone. */
-  --sidebar: rgb(255 255 255 / 0.4);
-  --window: rgb(255 255 255 / 0.8);
-  --glass-edge: inset 0 0 0 1px var(--hairline), 0 8px 24px rgb(0 0 0 / 0.06);
-  --on-ink: #ffffff; /* the arrow on the send button */
+  /* The window's chrome (the top bar and the sidebar) is the Mac's frosted
+     material with a thin wash. The chat area is a solid surface set into it. */
+  --sidebar: rgb(255 255 255 / 0.3);
+  --window: #ffffff;
   --raised: #ffffff; /* menus */
   --field: #ffffff; /* the composer */
   --bubble: rgb(23 23 23 / 0.06); /* your own messages */
   --ink: #171717; /* primary text */
   --ink-2: #525252; /* secondary text */
   --ink-3: #737373; /* muted text and icons */
+  --on-ink: #ffffff; /* the arrow on the send button */
   --hairline: rgb(23 23 23 / 0.08);
   --hover: rgb(23 23 23 / 0.04);
   --current: rgb(23 23 23 / 0.08);
   --danger: #dc2626;
-  --accent: #ff4d8d; /* PinkLabs pink, kept for the thorn mark and the keyboard focus ring */
+  --accent: #ff4d8d; /* PinkLabs pink, kept for the thorn mark, the caret and the keyboard focus ring */
   --float: 0 8px 24px rgb(0 0 0 / 0.08);
   --field-shadow: 0 0 0 1px var(--hairline), 0 8px 24px rgb(0 0 0 / 0.06);
-  --mono: ui-monospace, SFMono-Regular, Menlo, monospace; /* small figures and meta, such as counts and timings */
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --row: 32px;
-  --titlebar: 48px; /* the strip that holds the window buttons; see trafficLightPosition in tauri.conf.json */
+  --row: 30px;
+  --titlebar: 42px; /* the top bar that holds the window buttons; see trafficLightPosition in tauri.conf.json */
   color-scheme: light dark;
 }
 
 /* Follows the Mac's Light/Dark appearance setting */
 @media (prefers-color-scheme: dark) {
   :root {
-    --sidebar: rgb(255 255 255 / 0.05);
-    --window: rgb(20 20 22 / 0.5);
-    --glass-edge: inset 0 0 0 1px var(--hairline); /* in the dark an edge is a hairline, never a shadow */
+    --sidebar: rgb(0 0 0 / 0.12);
+    --window: #181818;
+    --raised: #2a2a2a;
+    --field: #2a2a2a;
+    --bubble: #2c2c2c;
+    --ink: #ececec;
+    --ink-2: #b4b4b4;
+    --ink-3: #8a8a8a;
     --on-ink: #171717;
-    --raised: #2a2a2d;
-    --field: rgb(255 255 255 / 0.07);
-    --bubble: rgb(255 255 255 / 0.08);
-    --ink: #ececee;
-    --ink-2: #b4b4ba;
-    --ink-3: #8b8b92;
     --hairline: rgb(237 237 237 / 0.08);
-    --hover: rgb(237 237 237 / 0.04);
-    --current: rgb(237 237 237 / 0.08);
+    --hover: rgb(237 237 237 / 0.05);
+    --current: rgb(237 237 237 / 0.09);
     --danger: #e5484d;
     --float: none; /* in the dark, depth comes from the lighter surface, not a shadow */
-    --field-shadow: inset 0 0 0 1px var(--hairline);
+    --field-shadow: none;
   }
 }
 
@@ -100,7 +97,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   padding: 0 8px 8px;
   display: flex;
   flex-direction: column;
-  font-size: 13px; /* the size Mac sidebars use */
+  font-size: 14px;
   line-height: 20px;
   /* App chrome should not highlight like text on a web page */
   user-select: none;
@@ -120,14 +117,15 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 32px;
+  height: 36px;
+  margin-bottom: 8px;
   padding: 0 8px;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
 }
 
 /* Hide/show button, fixed beside the red, yellow and green window buttons */
-#toggle-sidebar { position: fixed; top: 12px; left: 88px; z-index: 2; }
+#toggle-sidebar { position: fixed; top: 9px; left: 84px; z-index: 2; }
 
 body.sidebar-hidden #sidebar {
   margin-left: calc(-1 * var(--sidebar-width, 240px));
@@ -154,9 +152,9 @@ body.sidebar-hidden #resizer { margin: 0 -8px 0 0; }
   transition: background-color 150ms var(--ease);
 }
 .row:hover { background: var(--hover); }
-.row[aria-current="true"] { background: var(--current); box-shadow: inset 0 0 0 1px var(--hairline); }
+.row[aria-current="true"] { background: var(--current); }
 .row[aria-current="true"] .text { color: var(--ink); font-weight: 500; }
-li + li { margin-top: 2px; }
+li + li { margin-top: 1px; }
 
 .label {
   flex: 1;
@@ -173,27 +171,26 @@ button.row.label { width: 100%; flex: none; }
 .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Projects disclose their sessions in place. */
-.nav-section { margin-top: 24px; }
+.nav-section { margin-top: 12px; }
+.nav-section li:has(> details) + li:has(> details) { margin-top: 8px; } /* a little air between one project and the next */
 .nav-section li .text { color: var(--ink-2); }
 summary { list-style: none; }
 summary::-webkit-details-marker { display: none; }
 summary .label { font-weight: 500; }
-summary + ul { margin-top: 2px; padding-left: 24px; } /* session names line up under the project's name */
+summary + ul { margin-top: 1px; padding-left: 24px; } /* session names line up under the project's name */
 .chevron { transition: transform 150ms var(--ease); }
 details[open] > summary .chevron { transform: rotate(90deg); }
 /* A project shows a folder; pointing at it swaps in the arrow that opens and closes it */
 summary .chevron, summary .row:hover .folder, summary .row:focus-within .folder { display: none; }
 summary .row:hover .chevron, summary .row:focus-within .chevron { display: block; }
 .heading {
-  min-height: 24px;
-  margin-bottom: 4px; /* a label sits closer to its own list than to the section above */
+  min-height: var(--row);
+  margin-bottom: 1px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 4px 0 8px;
   color: var(--ink-3);
-  font-size: 12px;
-  font-weight: 500;
 }
 .empty-row {
   height: var(--row);
@@ -201,12 +198,7 @@ summary .row:hover .chevron, summary .row:focus-within .chevron { display: block
   display: flex;
   align-items: center;
   color: var(--ink-3);
-  font-size: 12px;
 }
-
-/* How many sessions a project holds: quiet figures that step aside for the row's buttons */
-.count { flex: none; padding-right: 8px; color: var(--ink-3); font: 12px/16px var(--mono); font-variant-numeric: tabular-nums; }
-.row:hover > .count, .row:focus-within > .count, .row:has([aria-expanded="true"]) > .count { display: none; }
 
 /* A row's buttons take up no room until the row is pointed at or focused,
    so its title gets the full width the rest of the time. */
@@ -270,20 +262,25 @@ summary .row:hover .chevron, summary .row:focus-within .chevron { display: block
   min-width: 0;
   display: flex;
   flex-direction: column;
-  /* A rounded panel resting on the window, with the sidebar beside it */
-  margin: 8px 8px 8px 0;
-  overflow: hidden;
-  background: var(--window);
-  border-radius: 12px;
-  box-shadow: var(--glass-edge);
+  position: relative;
+  isolation: isolate; /* keeps the ::before below inside this pane's own layers */
 }
-body.sidebar-hidden #chat { margin-left: 8px; }
-#chat .titlebar { height: calc(var(--titlebar) - 8px); } /* the panel already starts 8px down */
+/* The solid chat surface. It starts under the top bar and runs to the window's
+   right and bottom edges, so the top bar and sidebar frame it on two sides. */
+#chat::before {
+  content: "";
+  position: absolute;
+  inset: var(--titlebar) 0 0 0;
+  z-index: -1;
+  background: var(--window);
+  border-top-left-radius: 12px;
+}
+body.sidebar-hidden #chat::before { border-top-left-radius: 0; }
 
 /* One shared reading column aligns the transcript and composer. */
 .messages, .compose-dock, .welcome {
   width: 100%;
-  max-width: 744px; /* about 75 characters a line at the answer's size, a comfortable read */
+  max-width: 800px;
   margin-inline: auto;
   padding-inline: 32px;
 }
@@ -294,11 +291,10 @@ body.sidebar-hidden #chat { margin-left: 8px; }
   flex: none;
   display: flex;
   align-items: center;
-  height: calc(var(--titlebar) - 8px);
-  margin-top: calc(8px - var(--titlebar));
-  padding-inline: 20px;
-  border-bottom: 1px solid var(--hairline);
-  font-size: 13px;
+  height: var(--titlebar);
+  margin-top: calc(-1 * var(--titlebar));
+  padding-inline: 16px;
+  font-size: 14px;
   font-weight: 500;
   pointer-events: none; /* clicks fall through to the strip, so it still drags the window */
 }
@@ -358,14 +354,14 @@ kbd {
 .messages > li:not(.reply) {
   align-self: flex-end;
   max-width: 80%;
-  padding: 8px 12px;
-  border-radius: 16px;
+  padding: 10px 16px;
+  border-radius: 18px;
   background: var(--bubble);
   white-space: pre-wrap;
 }
 
 /* The composer is a raised card: depth comes from its fill and shadow, not an outline. */
-.compose-dock { flex: none; padding-top: 8px; padding-bottom: 12px; }
+.compose-dock { flex: none; padding-top: 8px; padding-bottom: 16px; }
 .composer {
   display: grid;
   gap: 8px;

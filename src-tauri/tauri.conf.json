@@ -19,8 +19,8 @@
         "hiddenTitle": true,
         "transparent": true,
         "trafficLightPosition": {
-          "x": 18,
-          "y": 24
+          "x": 16,
+          "y": 23
         },
         "windowEffects": {
           "effects": [

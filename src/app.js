@@ -74,7 +74,6 @@ function projectRow(project) {
   const sessions = state.sessions.filter((session) => session.projectId === project.id);
   const summary = `<span class="row" title="${safe(project.path)}">
     <span class="label">${icon('folder')}${icon('chevron')}<span class="text">${safe(project.name)}</span></span>
-    <span class="count">${sessions.length || ''}</span>
     <button class="icon" data-action="new-session" data-id="${safe(project.id)}"
       aria-label="New session in ${safe(project.name)}">${icon('plus')}</button>
     ${dots('Project options', deleteItem('delete-project', project.id))}
