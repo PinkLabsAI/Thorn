@@ -8,12 +8,12 @@ export function newState() {
     projects: [], // { id, name, path } - a folder on this Mac
     sessions: [], // { id, title, projectId, messages } - projectId is null for a standalone session
     openSessionId: null,
-    show: 'all', // sidebar filter: 'all' or 'projects'
     closed: {}, // dropdown key -> true when the user collapsed it
-    sidebar: { width: 280, hidden: false },
+    sidebar: { width: SIDEBAR_DEFAULT, hidden: false },
   };
 }
 
+export const SIDEBAR_DEFAULT = 240;
 export const SIDEBAR_MIN = 220;
 export const SIDEBAR_MAX = 480;
 
@@ -36,7 +36,7 @@ export function save(storage, state) {
 
 // A project is a folder, and takes the folder's name.
 export function addProject(state, path) {
-  const name = path.split('/').filter(Boolean).pop();
+  const name = path.split('/').filter(Boolean).pop() ?? path;
   const project = { id: crypto.randomUUID(), name, path };
   state.projects.unshift(project);
   return project;

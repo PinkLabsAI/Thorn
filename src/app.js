@@ -2,7 +2,7 @@
 
 import {
   load, save, addProject, addSession, removeSession, removeProject, addMessage, addReply, removeLastReply,
-  setSidebarWidth, SIDEBAR_MIN,
+  setSidebarWidth, SIDEBAR_MIN, SIDEBAR_DEFAULT,
 } from './store.js';
 import { drawReply, playReply } from './reply.js';
 import { sampleReply } from './sample.js';
@@ -29,35 +29,36 @@ const ICONS = {
   plus: '<path d="M5 12h14M12 5v14"/>',
   dots: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
   chevron: '<path d="m9 18 6-6-6-6"/>',
-  check: '<path d="M20 6 9 17l-5-5"/>',
+  send: '<path d="M12 19V5m-6 6 6-6 6 6"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
 };
 const icon = (name) => `<svg class="i ${name}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 
 // A three-dot button followed by its menu. The menu starts hidden.
 function dots(label, menuItems) {
   return `<span class="dots">
-    <button class="icon" data-action="menu" aria-haspopup="menu" aria-label="${label}">${icon('dots')}</button>
+    <button class="icon" data-action="menu" aria-haspopup="menu" aria-expanded="false" aria-label="${label}">${icon('dots')}</button>
     <span class="menu" role="menu" hidden>${menuItems}</span>
   </span>`;
 }
 
 function deleteItem(action, id) {
-  return `<button role="menuitem" class="danger" data-action="${action}" data-id="${id}">Delete</button>`;
+  return `<button role="menuitem" class="danger" data-action="${action}" data-id="${safe(id)}">Delete</button>`;
 }
 
 // <details>/<summary> is the browser's built-in dropdown: it opens and closes
 // on its own, so the only code needed is remembering which ones are closed.
 function dropdown(key, summary, items, emptyText) {
-  return `<details data-key="${key}" ${state.closed[key] ? '' : 'open'}>
+  return `<details data-key="${safe(key)}" ${state.closed[key] ? '' : 'open'}>
     <summary>${summary}</summary>
     <ul>${items || `<li class="empty-row">${emptyText}</li>`}</ul>
   </details>`;
 }
 
-function sessionRow(session, projectTag = '') {
+function sessionRow(session) {
   return `<li class="row" ${session.id === state.openSessionId ? 'aria-current="true"' : ''}>
-    <button class="label" data-action="open-session" data-id="${session.id}">
-      <span class="text">${safe(session.title)}</span>${projectTag}
+    <button class="label" data-action="open-session" data-id="${safe(session.id)}">
+      <span class="text">${safe(session.title)}</span>
     </button>
     ${dots('Session options', deleteItem('delete-session', session.id))}
   </li>`;
@@ -67,78 +68,81 @@ function projectRow(project) {
   const sessions = state.sessions.filter((session) => session.projectId === project.id);
   const summary = `<span class="row" title="${safe(project.path)}">
     <span class="label">${icon('chevron')}<span class="text">${safe(project.name)}</span></span>
-    <button class="icon" data-action="new-session" data-id="${project.id}"
+    <button class="icon" data-action="new-session" data-id="${safe(project.id)}"
       aria-label="New session in ${safe(project.name)}">${icon('plus')}</button>
     ${dots('Project options', deleteItem('delete-project', project.id))}
   </span>`;
   return `<li>${dropdown(project.id, summary, sessions.map((s) => sessionRow(s)).join(''), 'No sessions yet')}</li>`;
 }
 
-// A section title. `addButton` is an optional icon button on the right.
-function heading(text, addButton = '') {
-  return `<span class="row heading"><span class="label">${icon('chevron')}${text}</span>${addButton}</span>`;
-}
-
-function showOption(value, text) {
-  return `<button role="menuitemradio" aria-checked="${state.show === value}"
-    data-action="show" data-id="${value}">${text}${state.show === value ? icon('check') : ''}</button>`;
-}
-
 function drawSidebar() {
-  const projectName = (id) => state.projects.find((project) => project.id === id).name;
-  // "All sessions" lists every session; ones inside a project carry its name as a tag.
-  const everySession = state.sessions.map((session) =>
-    sessionRow(session, session.projectId ? `<span class="tag">${safe(projectName(session.projectId))}</span>` : ''));
-
-  const addProjectButton = `<button class="icon" data-action="new-project" aria-label="Add project">${icon('plus')}</button>`;
-
-  // data-tauri-drag-region lets you move the window by dragging that element.
+  const standalone = state.sessions.filter((session) => !session.projectId);
   sidebar.innerHTML = `
     <div class="titlebar" data-tauri-drag-region></div>
-    <header class="brand">
-      <span class="name">Thorn</span>
-      ${dots('View options', `<span class="menu-title">Show</span>
-        ${showOption('all', 'All sessions')}
-        ${showOption('projects', 'Projects only')}`)}
-    </header>
-    <button class="row label" data-action="new-session">${icon('plus')}New session</button>
-    ${dropdown('projects', heading('Projects', addProjectButton), state.projects.map(projectRow).join(''), 'No projects yet')}
-    ${state.show === 'all' ? dropdown('sessions', heading('Sessions'), everySession.join(''), 'No sessions yet') : ''}`;
+    <header class="brand">Thorn</header>
+    <button class="row label new-session" data-action="new-session">${icon('plus')}New session</button>
+    <section class="nav-section" aria-labelledby="projects-label">
+      <header class="heading">
+        <span id="projects-label">Projects</span>
+        <button class="icon" data-action="new-project" aria-label="Add project" title="Add project">${icon('plus')}</button>
+      </header>
+      <ul>${state.projects.length ? state.projects.map(projectRow).join('') : '<li class="empty-row">No projects yet</li>'}</ul>
+    </section>
+    ${standalone.length ? `<section class="nav-section" aria-labelledby="sessions-label">
+      <header class="heading" id="sessions-label">Sessions</header>
+      <ul>${standalone.map(sessionRow).join('')}</ul>
+    </section>` : ''}`;
+}
+
+function composer(project, hasMessages) {
+  const context = hasMessages
+    ? (project ? `<span class="composer-context">${icon('folder')}<span class="text">${safe(project.name)}</span></span>` : '')
+    : `<label class="project-picker" title="Choose a project">
+        ${icon('folder')}
+        <select name="project" aria-label="Choose project">
+          <option value="">No project</option>
+          ${state.projects.map((p) => `<option value="${safe(p.id)}" ${p.id === project?.id ? 'selected' : ''}>${safe(p.name)}</option>`).join('')}
+          <option value="add-project">Add project…</option>
+        </select>
+      </label>`;
+  return `<form class="composer">
+    <textarea name="text" rows="2" placeholder="Message Thorn" aria-label="Message Thorn"></textarea>
+    <div class="composer-toolbar">
+      ${context}
+      <button class="send-button" aria-label="Send message" title="Send message" disabled>${icon('send')}</button>
+    </div>
+  </form>
+  <p class="notice" title="Replies are scripted in this preview">Demo mode</p>`;
 }
 
 function drawChat() {
   playing?.stop(); // the chat is about to be replaced, so a reply still arriving has nowhere to go
   playing = null;
   const session = state.sessions.find((s) => s.id === state.openSessionId);
-  if (!session) {
-    chat.innerHTML = `<div class="titlebar" data-tauri-drag-region></div>
-      <div class="welcome"><h1>Thorn</h1>
-      <p>Start a session to talk with the model, or add a project to work on a folder</p></div>`;
-    return;
-  }
-  const project = state.projects.find((p) => p.id === session.projectId);
+  const project = state.projects.find((p) => p.id === session?.projectId);
+  const hasMessages = Boolean(session?.messages.length);
   chat.innerHTML = `
     <div class="titlebar" data-tauri-drag-region></div>
-    <header class="chat-title">
-      <span class="text">${safe(session.title)}</span>
-      ${project ? `<span class="tag">${safe(project.name)}</span>` : ''}
-    </header>
-    <ol class="messages">${session.messages.map((m) =>
-      (m.from === 'user' ? `<li>${safe(m.text)}</li>` : '<li class="reply"></li>')).join('')}</ol>
-    <p class="notice">No model is connected yet, so every reply is the same scripted sample</p>
-    <form class="composer">
-      <input name="text" placeholder="Message Thorn" autocomplete="off" aria-label="Message">
-      <button>Send</button>
-    </form>`;
+    ${hasMessages ? `
+      <header class="chat-title"><span class="text">${safe(session.title)}</span></header>
+      <ol class="messages">${session.messages.map((m) =>
+        (m.from === 'user' ? `<li>${safe(m.text)}</li>` : '<li class="reply"></li>')).join('')}</ol>
+      <div class="compose-dock">${composer(project, true)}</div>
+    ` : `
+      <div class="welcome">
+        <h1>Start a Thorn session</h1>
+        ${composer(project, false)}
+      </div>
+    `}`;
   // Replies are built from elements rather than text, so they fill their <li> after it exists
-  const replies = session.messages.filter((m) => m.from === 'assistant');
+  const replies = session?.messages.filter((m) => m.from === 'assistant') ?? [];
   chat.querySelectorAll('.reply').forEach((li, i) => {
     const isLast = replies[i] === session.messages.at(-1); // only the latest reply can be retried
     drawReply(li, replies[i], isLast ? () => retry(session) : null);
   });
   const list = chat.querySelector('.messages');
-  list.scrollTop = list.scrollHeight;
-  chat.querySelector('input').focus();
+  if (list) list.scrollTop = list.scrollHeight;
+  chat.querySelector('textarea').focus({ preventScroll: true });
 }
 
 // Streams a reply to the session's latest message into the open chat.
@@ -156,11 +160,13 @@ function reply(session) {
 
   const mine = playReply(li, sampleReply(), () => retry(session));
   playing = mine;
+  updateComposer(chat.querySelector('form'));
   mine.finished.then((message) => {
     follow.disconnect();
     stick(); // once more, for the buttons that were just added under the reply
     if (!message) return; // cut short, for example by opening another session
     playing = null;
+    updateComposer(chat.querySelector('form'));
     addReply(state, session.id, message);
     save(localStorage, state);
   });
@@ -182,7 +188,9 @@ function applySidebar() {
 
 function closeMenus(except = null) {
   for (const menu of document.querySelectorAll('.menu')) {
-    if (menu !== except) menu.hidden = true;
+    if (menu === except) continue;
+    menu.hidden = true;
+    menu.previousElementSibling.setAttribute('aria-expanded', 'false');
   }
 }
 
@@ -198,6 +206,7 @@ document.addEventListener('click', async (event) => {
   event.preventDefault(); // buttons inside a <summary> must not also toggle the dropdown
   if (menu) {
     menu.hidden = !menu.hidden;
+    button.setAttribute('aria-expanded', String(!menu.hidden));
     return;
   }
 
@@ -206,13 +215,12 @@ document.addEventListener('click', async (event) => {
     state.sidebar.hidden = !state.sidebar.hidden;
     applySidebar();
   }
-  if (action === 'show') state.show = id;
   if (action === 'open-session') state.openSessionId = id;
   if (action === 'new-session') addSession(state, id ?? null);
   if (action === 'delete-session') removeSession(state, id);
   if (action === 'new-project') {
     const folder = await open({ directory: true, title: 'Choose a project folder' });
-    if (folder) addProject(state, folder); // null when the picker is cancelled
+    if (folder && !state.projects.some((p) => p.path === folder)) addProject(state, folder);
   }
   if (action === 'delete-project') {
     const project = state.projects.find((p) => p.id === id);
@@ -223,8 +231,21 @@ document.addEventListener('click', async (event) => {
 
   save(localStorage, state);
   drawSidebar();
-  // Redraw the chat only when a different session is open, so a half-typed message is kept.
   if (state.openSessionId !== openBefore) drawChat();
+  else if (action === 'new-project' || action === 'delete-project') {
+    const picker = chat.querySelector('.project-picker');
+    if (picker) {
+      const selected = state.projects.find((p) => p.id === picker.querySelector('select').value);
+      const form = picker.closest('form');
+      const draft = form.elements.text.value;
+      drawChat();
+      const fresh = chat.querySelector('form');
+      fresh.elements.project.value = selected?.id ?? '';
+      fresh.elements.project.dataset.selected = fresh.elements.project.value;
+      fresh.elements.text.value = draft;
+      updateComposer(fresh);
+    }
+  }
 });
 
 // "toggle" fires when a dropdown opens or closes. It does not bubble, so the
@@ -236,20 +257,68 @@ document.addEventListener('toggle', (event) => {
   save(localStorage, state);
 }, true);
 
-document.addEventListener('submit', (event) => {
+function updateComposer(form) {
+  const field = form.elements.text;
+  field.style.height = 'auto';
+  field.style.height = `${field.scrollHeight}px`;
+  form.querySelector('.send-button').disabled = !field.value.trim() || Boolean(playing);
+}
+
+chat.addEventListener('input', (event) => {
+  if (event.target.matches('textarea')) updateComposer(event.target.form);
+});
+
+chat.addEventListener('change', async (event) => {
+  const picker = event.target;
+  if (picker.name !== 'project') return;
+  if (picker.value === 'add-project') {
+    const previous = picker.dataset.selected ?? picker.querySelector('option[selected]')?.value ?? '';
+    picker.value = previous;
+    const folder = await open({ directory: true, title: 'Choose a project folder' });
+    if (!folder) return;
+    const project = state.projects.find((p) => p.path === folder) ?? addProject(state, folder);
+    save(localStorage, state);
+    drawSidebar();
+    if (!picker.isConnected) return;
+    if (![...picker.options].some((option) => option.value === project.id)) {
+      picker.add(new Option(project.name, project.id), picker.options.length - 1);
+    }
+    picker.value = project.id;
+  }
+  picker.dataset.selected = picker.value;
+});
+
+chat.addEventListener('submit', (event) => {
   event.preventDefault();
-  const text = event.target.elements.text.value.trim();
-  if (!text) return;
-  addMessage(state, state.openSessionId, text);
+  const form = event.target;
+  const text = form.elements.text.value.trim();
+  if (!text || playing) return;
+  const project = state.projects.find((p) => p.id === form.elements.project?.value);
+  const session = state.sessions.find((s) => s.id === state.openSessionId) ?? addSession(state, project?.id);
+  if (!session.messages.length) {
+    session.projectId = project?.id ?? null;
+    if (project) delete state.closed[project.id];
+  }
+  addMessage(state, session.id, text);
   save(localStorage, state);
   drawSidebar();
   drawChat();
-  reply(state.sessions.find((s) => s.id === state.openSessionId));
+  reply(session);
 });
 
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') closeMenus();
-  if (event.metaKey && event.key === 'b') document.querySelector('#toggle-sidebar').click(); // Cmd+B
+  if (event.key === 'Escape') {
+    document.querySelector('.menu:not([hidden])')?.previousElementSibling.focus();
+    closeMenus();
+  }
+  if (event.metaKey && event.key === 'b') {
+    event.preventDefault();
+    document.querySelector('#toggle-sidebar').click();
+  }
+  if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.target.matches('.composer textarea')) {
+    event.preventDefault();
+    event.target.form.requestSubmit();
+  }
 });
 
 // Dragging the sidebar's edge. The sidebar starts at the window's left edge, so
@@ -265,33 +334,27 @@ resizer.addEventListener('pointerdown', (down) => {
     state.sidebar.hidden = false;
     setSidebarWidth(state, x);
     applySidebar();
-    document.body.classList.add('instant'); // follow the pointer exactly, with no animation lag
     const shift = Math.max(-SIDEBAR_MIN, Math.min(0, x - SIDEBAR_MIN));
     document.documentElement.style.setProperty('--sidebar-shift', `${shift}px`);
   };
   resizer.addEventListener('pointermove', drag);
-  resizer.addEventListener('pointerup', () => {
+  resizer.addEventListener('lostpointercapture', () => {
     resizer.removeEventListener('pointermove', drag);
-    const dragged = document.body.classList.contains('instant');
-    document.body.classList.remove('instant');
     document.documentElement.style.removeProperty('--sidebar-shift');
-    if (dragged) state.sidebar.hidden = x < SIDEBAR_MIN / 2;
-    applySidebar(); // animates from where it was let go to fully hidden or fully shown
+    state.sidebar.hidden = x < SIDEBAR_MIN / 2;
+    applySidebar();
     save(localStorage, state);
   }, { once: true });
 });
 
 resizer.addEventListener('dblclick', () => {
   state.sidebar.hidden = false;
-  setSidebarWidth(state, 280);
+  setSidebarWidth(state, SIDEBAR_DEFAULT);
   applySidebar();
   save(localStorage, state);
 });
 
-// Start in the saved layout without animating into it.
-document.body.classList.add('instant');
 applySidebar();
-requestAnimationFrame(() => document.body.classList.remove('instant'));
 
 drawSidebar();
 drawChat();

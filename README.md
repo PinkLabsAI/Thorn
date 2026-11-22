@@ -36,4 +36,4 @@ Projects and sessions are saved in the app's own `localStorage`, on this Mac onl
 
 The look follows the [unslop](https://github.com/heydamir/unslop) design guidelines by Damir Sokolovsky: one grey ramp with three text roles, spacing on a 4px grid, one line-icon set ([lucide](https://lucide.dev)) at one size, and weights 400 and 500 only.
 
-Site logos in web search results are loaded from [theSVG](https://thesvg.org) (MIT licensed). `src/logos.js` lists every logo theSVG has and picks the one for a site, so only pictures that exist are asked for. A site it has no logo for, or any site while offline, shows its first letter instead. The logos themselves remain trademarks of their owners.
+Research results appear in a compact disclosure list with bundled publisher logos and numbered citations in the answer. The MDN, Tauri and Claude marks come from [theSVG](https://thesvg.org) ([MIT license](src/source-logos/LICENSE-theSVG.txt)). The web.dev favicon comes from [web.dev](https://web.dev/). The [WHATWG mark](https://resources.whatwg.org/logo.svg) comes from [WHATWG](https://whatwg.org/). The marks remain the property of their respective owners.

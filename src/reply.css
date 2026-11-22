@@ -1,241 +1,65 @@
-/* Assistant replies: the status line, the web search and the streamed answer.
-   Colours and easing come from the variables at the top of styles.css. */
-:root {
-  --tile: #f5f5f5; /* pills and cards; solid, because favicons are outlined in it */
-  --tile-hover: #ffffff;
-  --lift: 0 0 0 1px rgb(0 0 0 / 0.04), 0 1px 1px rgb(0 0 0 / 0.04), 0 2px 4px -1px rgb(0 0 0 / 0.08);
-  --bounce: cubic-bezier(0.34, 1.56, 0.64, 1); /* overshoots a little before settling */
-}
-@media (prefers-color-scheme: dark) {
-  :root { --tile: #1e1e20; --tile-hover: #28282a; --lift: none; }
-}
-
-.messages > .reply {
-  align-self: stretch;
-  max-width: none;
-  padding: 0;
-  background: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.messages > li + .reply { margin-top: 8px; }
-.reply li + li { margin-top: 0; }
-
-/* ---------- Things several parts share ---------- */
-
-/* A slot holds one piece of content at a time. While it changes, old and new
-   sit in the same grid cell so they can cross over (see swap() in reply.js). */
-.slot { display: inline-grid; }
-.slot > * { grid-area: 1 / 1; white-space: nowrap; }
-.slot > .in { animation: rise 350ms var(--ease) backwards; }
-.slot > .out { animation: leave 250ms var(--ease) forwards; }
-@keyframes rise { from { opacity: 0; transform: translateY(6px); filter: blur(3px); } }
-@keyframes leave { to { opacity: 0; transform: translateY(-6px); filter: blur(3px); } }
-
-/* A highlight sweeping across text that names work in progress. The text is
-   see-through and shows a moving gradient behind it. */
-.shimmer {
-  background: linear-gradient(90deg, var(--ink-3) 40%, var(--ink) 50%, var(--ink-3) 60%) 100% 0 / 250% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: shimmer 1.6s linear infinite;
-}
-@keyframes shimmer { to { background-position: 0 0; } }
-
-/* A site's logo on a white disc, or its letter on a coloured one when there is
-   no logo; --hue is set per site from reply.js */
-.fav {
-  flex: none;
-  width: 16px;
-  height: 16px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: linear-gradient(135deg, oklch(0.72 0.15 var(--hue)), oklch(0.58 0.17 calc(var(--hue) + 30)));
-  color: #fff;
-  font-size: 9px;
-  line-height: 1;
-  font-weight: 500;
-  text-transform: uppercase;
-}
-.fav.logo { background: #fff; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06); }
-.fav img { width: 100%; height: 100%; padding: 15%; object-fit: contain; }
-
-/* Favicons overlapping like a fanned deck; pointing at them spreads them out */
-.stack { display: flex; flex: none; }
-.stack .fav {
-  position: relative;
-  box-sizing: content-box;
-  border: 2px solid var(--tile); /* a rim in the surface colour separates the discs */
-  transition: margin-left 350ms var(--ease) 150ms, border-color 150ms var(--ease);
-}
-.stack .fav + .fav { margin-left: -9px; }
-.stack .fav:nth-child(1) { z-index: 3; }
-.stack .fav:nth-child(2) { z-index: 2; }
-.stack .fav:nth-child(3) { z-index: 1; }
-.stack:hover .fav + .fav { margin-left: -3px; }
-.stack .fav.new { animation: pop 500ms var(--bounce) backwards; }
-@keyframes pop { from { opacity: 0; transform: scale(0); } }
-
-/* ---------- Status line ---------- */
+/* Assistant activity and answers share the conversation canvas. */
+.messages > .reply { display: grid; gap: 8px; min-width: 0; }
 
 .status {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 32px;
   color: var(--ink-3);
-  user-select: none;
-  -webkit-user-select: none;
+  font-size: 12px;
 }
-.status .caption { font-weight: 500; }
-.status .detail:empty { display: none; }
-.status .timer { font-variant-numeric: tabular-nums; }
-
-.i.thinking { animation: think 2.4s ease-in-out infinite; }
-.i.researching { animation: look 2s linear infinite; }
-.i.writing { animation: write 1.2s ease-in-out infinite; transform-origin: 20% 80%; }
-/* The tick draws itself: its outline is one dash that slides into place */
-.i.done path { stroke-dasharray: 1; animation: tick 500ms var(--ease) 100ms backwards; }
-@keyframes think { 50% { transform: rotate(45deg) scale(0.8); } to { transform: rotate(90deg); } }
-@keyframes look {
-  from, to { transform: translate(0, -1.5px); }
-  25% { transform: translate(1.5px, 0); }
-  50% { transform: translate(0, 1.5px); }
-  75% { transform: translate(-1.5px, 0); }
+.working-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
-@keyframes write { 50% { transform: rotate(-8deg) translateX(2px); } }
-@keyframes tick { from { stroke-dashoffset: 1; } }
 
-/* ---------- Web search ---------- */
-
-.search { user-select: none; -webkit-user-select: none; }
-
-.pill {
+.search { min-width: 0; color: var(--ink-2); font-size: 12px; }
+.search summary {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  width: fit-content;
   max-width: 100%;
-  height: 40px;
-  padding: 0 14px 0 6px;
-  border-radius: 20px;
-  background: var(--tile);
-  font-weight: 500;
-  transition: background-color 150ms var(--ease), box-shadow 150ms var(--ease);
+  margin-left: -4px;
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
 }
-.pill:hover, .card:hover { background: var(--tile-hover); box-shadow: var(--lift); }
-.pill:hover .fav, .card:hover .fav { border-color: var(--tile-hover); }
-.pill .caption { min-width: 0; overflow: hidden; }
-.pill .chevron-down { color: var(--ink-3); transition: transform 350ms var(--ease); }
-.search.open .chevron-down { transform: rotate(180deg); }
-
-.globe {
-  position: relative;
+.search summary:hover { background: var(--hover); }
+.search-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search .chevron-down { transition: transform 150ms var(--ease); }
+.search[open] .chevron-down { transform: rotate(180deg); }
+.sources {
+  display: grid;
+  gap: 4px;
+  padding-block: 4px;
+}
+.source {
+  display: grid;
+  grid-template-columns: 16px 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+.source + .source { margin-top: 0; }
+.source-index { text-align: right; }
+.source-index, .source-host { color: var(--ink-3); }
+.source-index, .cite, .status { font-variant-numeric: tabular-nums; }
+.source-title, .source-host { display: block; line-height: 16px; }
+.source-title { color: var(--ink); }
+.source-logo {
   flex: none;
-  width: 28px;
-  height: 28px;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  background: var(--raised);
-  color: var(--ink-3);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: var(--hover);
 }
-/* Progress ring around the globe. Turned so it starts filling from the top. */
-.ring {
-  position: absolute;
-  inset: 0;
-  transform: rotate(-90deg);
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  transition: opacity 300ms;
-}
-.ring .track { opacity: 0.12; }
-.ring .fill { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 600ms var(--ease); }
-/* A finished search holds the full ring for a beat before it fades */
-.search[data-status="done"] .ring { opacity: 0; transition-delay: 450ms; }
-
-/* Opening and closing. A grid row can animate between 0fr and 1fr, which is how
-   the height follows the content without the code having to measure it. */
-.collapse {
-  display: grid;
-  grid-template-rows: 0fr;
-  margin: 0 -4px;
-  opacity: 0;
-  visibility: hidden; /* closed cards stay out of keyboard focus */
-  transition: grid-template-rows 450ms var(--ease), opacity 250ms, visibility 0s 450ms;
-}
-.search.open .collapse { grid-template-rows: 1fr; opacity: 1; visibility: visible; transition-delay: 0s; }
-.collapse > div { min-height: 0; overflow: hidden; }
-
-.cards {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  padding: 10px 4px 4px; /* room for the hover lift and shadow before the clip */
-}
-@media (max-width: 900px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.cards li.new { animation: land 450ms var(--ease) backwards; }
-@keyframes land { from { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(6px); } }
-
-.card {
-  position: relative;
-  width: 100%;
-  height: 84px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border-radius: 12px;
-  background: var(--tile);
-  overflow: hidden;
-  transition: background-color 200ms var(--ease), box-shadow 200ms var(--ease), transform 200ms var(--ease);
-}
-/* The <li> takes the hover and the card inside lifts, so the lift cannot slide
-   the card out from under the pointer */
-.cards li:hover > .card:not(.skeleton, .less) { transform: translateY(-2px); }
-.card .title {
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 500;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2; /* two lines, then "…" */
-  overflow: hidden;
-}
-.card .site { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 12px; line-height: 16px; }
-.card .text { flex: 1; }
-.card .n, .cite .n { font-variant-numeric: tabular-nums; opacity: 0.7; }
-.card.less {
-  align-items: center;
-  justify-content: center;
-  background: none;
-  box-shadow: inset 0 0 0 1px var(--hairline);
-  color: var(--ink-3);
-  font-size: 12px;
-  font-weight: 500;
-}
-.card.less:hover { background: var(--tile); box-shadow: none; color: var(--ink); }
-
-/* Placeholder card: grey bars with a band of light sweeping across */
-.skeleton { justify-content: flex-start; }
-.skeleton i { height: 10px; border-radius: 5px; background: var(--current); }
-.skeleton i:nth-child(1) { width: 88%; }
-.skeleton i:nth-child(2) { width: 60%; margin: 6px 0 auto; }
-.skeleton i:nth-child(3) { width: 48px; height: 8px; }
-.skeleton::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, var(--hover), transparent);
-  animation: sweep 1.3s ease-in-out infinite;
-}
-.skeleton:hover { background: var(--tile); box-shadow: none; }
-@keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.source-logo:has(img) { background: #fafafa; }
+.source-logo img { display: block; object-fit: contain; }
 
 /* ---------- Answer ---------- */
 
@@ -244,7 +68,7 @@
   flex-direction: column;
   gap: 12px;
   font-size: 15px;
-  line-height: 26px;
+  line-height: 25px;
   overflow-wrap: anywhere;
 }
 .answer:empty { display: none; }
@@ -278,51 +102,25 @@
 .code-top button:hover { background: var(--current); color: var(--ink); }
 .code pre { padding: 0 16px 16px; overflow-x: auto; }
 
-/* A word that has just arrived comes into focus and develops like a photo.
-   reply.js gives each one a negative delay so a redraw resumes it part-way. */
-.answer .w.new {
-  animation: sharpen 260ms cubic-bezier(0.2, 0.7, 0.3, 1) backwards, develop 520ms cubic-bezier(0.25, 0.6, 0.35, 1) backwards;
-}
-@keyframes sharpen { from { filter: blur(5px); } }
-@keyframes develop { from { opacity: 0; } }
-
-/* The dot at the point where text is being written */
-.caret {
-  display: inline-block;
-  width: 0.4em;
-  height: 0.4em;
-  margin-left: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  vertical-align: 0.05em;
-  animation: pulse 1s ease-in-out infinite;
-}
-@keyframes pulse { from, to { opacity: 0.6; } 50% { opacity: 0.25; } }
-
 /* ---------- Citations ---------- */
 
 .cite {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 20px;
-  padding: 0 6px 0 3px;
-  border-radius: 10px;
-  background: var(--tile);
-  color: var(--ink-3);
-  font-size: 12px;
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--hover);
+  color: var(--ink-2);
+  font-size: 11px;
   line-height: 1;
-  font-weight: 500;
-  white-space: nowrap;
-  vertical-align: middle; /* not the baseline: a logo has none, so pills with and without one would sit at different heights */
-  margin-top: -2px;
+  vertical-align: 0.15em;
   cursor: default;
-  transition: background-color 150ms var(--ease), color 150ms var(--ease), box-shadow 150ms var(--ease);
 }
-.cite + .cite { margin-left: 4px; }
-.cite .fav { width: 14px; height: 14px; font-size: 8px; }
-.cite:hover, .cite:focus-visible { background: var(--tile-hover); color: var(--ink); box-shadow: var(--lift); }
+.cite + .cite { margin-left: 3px; }
+.cite:hover, .cite:focus-visible { background: var(--current); color: var(--ink); }
 
 /* The card that appears above a citation. Hidden with opacity and visibility
    (not display) so it can fade, after a short wait so a passing pointer does
@@ -332,7 +130,7 @@
   bottom: calc(100% + 8px);
   left: 0;
   z-index: 2;
-  width: 288px;
+  width: min(280px, calc(100vw - 280px));
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -345,28 +143,21 @@
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(4px) scale(0.96);
-  transition: opacity 200ms var(--ease), transform 200ms var(--ease), visibility 0s 200ms;
+  transition: opacity 150ms var(--ease), visibility 0s 150ms;
 }
 .preview.below { bottom: auto; top: calc(100% + 8px); }
 .cite:hover .preview, .cite:focus-visible .preview {
   opacity: 1;
   visibility: visible;
-  transform: none;
-  transition-delay: 300ms;
+  transition-delay: 150ms;
 }
-.preview .site { display: flex; align-items: center; gap: 6px; }
-.preview .site .fav { width: 16px; height: 16px; font-size: 9px; }
+.preview .site { display: flex; align-items: center; gap: 8px; }
 .preview .title { color: var(--ink); font-size: 14px; line-height: 20px; }
-.preview .snippet { font-weight: 400; line-height: 16px; }
+.preview .site, .preview .snippet { font-size: 12px; line-height: 16px; }
 
-/* ---------- Copy and retry ---------- */
+/* Copy and retry */
+.actions { display: flex; gap: 4px; margin-left: -4px; }
 
-.actions { display: flex; gap: 4px; margin-left: -4px; animation: rise 350ms var(--ease) backwards; }
-
-/* People who ask their Mac for less motion get the same content, standing still */
 @media (prefers-reduced-motion: reduce) {
-  .reply *, .reply *::after { animation: none !important; transition: none !important; }
-  .slot > .out { display: none; }
-  .shimmer { color: var(--ink-3); background: none; }
+  .reply *, .reply *::after { transition: none !important; }
 }

@@ -48,8 +48,8 @@ A model does not send its answer in one piece. It sends a few words at a time ov
 
 What the pieces on screen mean:
 
-- **The status line** says what the model is doing and for how long.
-- **The search pill** fills its ring as results land, and opens to show every source [2].
+- **The status line** says what the model is doing and how long it took.
+- **The search row** opens to show every source [2].
 - **Citations** like the one ending this sentence show their source when you point at them [3].
 
 Reading a stream in JavaScript looks like this:

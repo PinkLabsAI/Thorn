@@ -12,10 +12,10 @@
   --current: rgb(23 23 23 / 0.08);
   --danger: #dc2626;
   --accent: #ff4d8d; /* PinkLabs pink, kept for the keyboard focus ring only */
-  --float: 0 8px 24px rgb(0 0 0 / 0.06);
+  --float: 0 8px 24px rgb(0 0 0 / 0.08);
+  --outline: rgb(23 23 23 / 0.15);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --slide: 320ms cubic-bezier(0.4, 0, 0.2, 1); /* sidebar slide: starts and ends gently */
-  --row: 36px;
+  --row: 32px;
   --titlebar: 28px; /* height of a Mac title bar, so it lines up with the window buttons */
   color-scheme: light dark;
 }
@@ -33,6 +33,7 @@
     --hover: rgb(237 237 237 / 0.04);
     --current: rgb(237 237 237 / 0.08);
     --danger: #e5484d;
+    --outline: rgb(237 237 237 / 0.16);
     --float: none; /* in the dark, depth comes from the lighter surface, not a shadow */
   }
 }
@@ -49,7 +50,7 @@ body {
   background: var(--window);
 }
 
-button, input { font: inherit; color: inherit; }
+button, textarea, select { font: inherit; color: inherit; }
 button { border: 0; padding: 0; background: none; text-align: left; }
 ul, ol { margin: 0; padding: 0; list-style: none; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -74,7 +75,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 
 #sidebar {
   flex: none;
-  width: var(--sidebar-width, 280px); /* set from app.js when the edge is dragged */
+  width: var(--sidebar-width, 240px); /* set from app.js when the edge is dragged */
   padding: 0 12px 12px;
   overflow-y: auto;
   background: var(--sidebar);
@@ -85,38 +86,26 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   cursor: default;
 }
 
-/* The app name, directly under the window buttons */
+/* The app name sits beneath the system window controls. */
 .brand {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   height: 40px;
-  padding-left: 8px;
-  margin-bottom: 8px;
+  padding: 0 8px;
+  font-size: 16px;
+  font-weight: 500;
 }
-.name { font-size: 16px; font-weight: 500; }
 
 /* Hide/show button, fixed beside the red, yellow and green window buttons */
 #toggle-sidebar { position: fixed; top: 2px; left: 78px; z-index: 2; }
 
-/* Hiding slides the sidebar off the left edge. A negative margin (rather than
-   display: none) can be animated, and lets the chat grow smoothly into the space. */
-#sidebar {
-  margin-left: var(--sidebar-shift, 0px); /* set while the edge is dragged past the minimum width */
-  transition: margin-left var(--slide), visibility 0s;
-}
+/* The sidebar stays in layout while dragging past its minimum width. */
+#sidebar { margin-left: var(--sidebar-shift, 0px); }
 body.sidebar-hidden #sidebar {
-  margin-left: calc(-1 * var(--sidebar-width, 280px));
-  visibility: hidden; /* once it is off screen, keep it out of keyboard focus too */
-  transition: margin-left var(--slide), visibility 0s 320ms; /* hide only after the slide ends */
+  margin-left: calc(-1 * var(--sidebar-width, 240px));
+  visibility: hidden;
 }
-/* While hidden, the drag edge waits at the window's left side */
 body.sidebar-hidden #resizer { margin: 0 -8px 0 0; }
-/* No animation while dragging (the sidebar tracks the pointer) or at startup */
-body.instant #sidebar { transition: none; }
-@media (prefers-reduced-motion: reduce) {
-  #sidebar, body.sidebar-hidden #sidebar { transition: none; }
-}
 
 /* A thin strip over the sidebar's right border that can be dragged */
 #resizer {
@@ -133,7 +122,7 @@ body.instant #sidebar { transition: none; }
   display: flex;
   align-items: center;
   height: var(--row);
-  border-radius: 8px;
+  border-radius: 6px;
   transition: background-color 150ms var(--ease);
 }
 .row:hover { background: var(--hover); }
@@ -148,26 +137,38 @@ li + li { margin-top: 2px; }
   gap: 8px;
   height: var(--row);
   padding: 0 8px;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 button.row.label { width: 100%; flex: none; }
 .label > .i { color: var(--ink-3); }
 .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Dropdowns. A section sits further from the one above than from its own rows. */
-details { margin-top: 24px; }
-li > details { margin-top: 0; }
-summary { list-style: none; } /* hide the browser's own triangle... */
+/* Projects disclose their sessions in place. */
+.nav-section { margin-top: 20px; }
+summary { list-style: none; }
 summary::-webkit-details-marker { display: none; }
-summary + ul { margin-top: 2px; }
-details ul ul { padding-left: 24px; } /* lines sessions up under the project's name */
-
-/* ...and use the chevron icon instead: right when closed, down when open */
+summary + ul { margin-top: 2px; padding-left: 16px; }
 .chevron { transition: transform 150ms var(--ease); }
 details[open] > summary .chevron { transform: rotate(90deg); }
+.heading {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 0 8px;
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 500;
+}
+.empty-row { padding: 4px 8px; color: var(--ink-3); font-size: 13px; }
+.new-session { background: var(--hover); font-weight: 500; }
+.new-session:hover { background: var(--current); }
+.nav-section .dots, .nav-section summary .icon { opacity: 0; }
+.nav-section .row:hover > :is(.dots, .icon),
+.nav-section .row:focus-within > :is(.dots, .icon),
+.nav-section .dots:has([aria-expanded="true"]) { opacity: 1; }
 
-.heading { color: var(--ink-2); font-size: 12px; line-height: 16px; }
-.heading > .icon { margin-right: 4px; } /* same column as the three dots below it */
+.icon { margin-right: 4px; } /* same column as the three dots below it */
 .empty-row { height: var(--row); padding: 0 8px; display: flex; align-items: center; color: var(--ink-3); }
 
 .tag {
@@ -225,7 +226,6 @@ details[open] > summary .chevron { transform: rotate(90deg); }
 }
 .menu button:hover { background: var(--hover); }
 .menu .danger { color: var(--danger); }
-.menu-title { display: block; padding: 4px 8px; color: var(--ink-3); font-size: 12px; line-height: 16px; }
 
 /* ---------- Chat pane ---------- */
 
@@ -236,58 +236,120 @@ details[open] > summary .chevron { transform: rotate(90deg); }
   flex-direction: column;
 }
 
-/* The chat's content keeps a readable width however wide the window gets */
-.chat-title, .messages, .notice, .composer { width: 100%; max-width: 800px; margin-inline: auto; }
+/* One shared reading column aligns the title, transcript and composer. */
+.chat-title, .messages, .compose-dock, .welcome {
+  width: 100%;
+  max-width: 784px;
+  margin-inline: auto;
+  padding-inline: 32px;
+}
 
 .chat-title {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 44px;
-  padding: 0 32px;
+  height: 40px;
+  color: var(--ink-2);
+  font-size: 13px;
   font-weight: 500;
 }
-#chat .tag { margin-left: 0; }
 
-.welcome { margin: auto; padding-bottom: var(--titlebar); text-align: center; color: var(--ink-2); }
-.welcome h1 { margin: 0 0 4px; font-size: 20px; line-height: 28px; font-weight: 500; color: var(--ink); }
-.welcome p { margin: 0; }
+.welcome { margin-block: auto; padding-bottom: var(--titlebar); }
+.welcome h1 {
+  margin: 0 0 24px;
+  color: var(--ink);
+  text-align: center;
+  font-size: clamp(22px, 3.4vw, 30px);
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
 
 .messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 16px 32px;
+  padding-block: 12px 24px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 20px;
 }
-.messages > li {
+.messages > li { flex: none; margin: 0; overflow-wrap: anywhere; }
+.messages > li:not(.reply) {
   align-self: flex-end;
-  max-width: 70%;
+  max-width: 80%;
   padding: 8px 12px;
   border-radius: 12px;
-  background: var(--current);
-  overflow-wrap: anywhere;
+  background: var(--hover);
+  white-space: pre-wrap;
 }
 
-.notice { margin-block: 0; padding: 0 32px 8px; color: var(--ink-3); font-size: 12px; line-height: 16px; }
-
-.composer { display: flex; gap: 8px; padding: 0 32px 32px; }
-.composer input {
-  flex: 1;
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid var(--hairline);
-  border-radius: 8px;
+.compose-dock { flex: none; padding-top: 8px; padding-bottom: 12px; }
+.composer {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--outline);
+  border-radius: 12px;
   background: var(--window);
 }
-.composer button {
-  height: 40px;
-  padding: 0 16px;
+.composer:focus-within { border-color: var(--ink-3); }
+.composer:has(textarea:focus-visible) { outline: 1px solid var(--accent); outline-offset: 1px; }
+.composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  max-height: 120px;
+  padding: 2px 4px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  resize: none;
+}
+.composer textarea::placeholder { color: var(--ink-3); }
+.composer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 32px;
+}
+.project-picker, .composer-context {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+  padding-inline: 4px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.project-picker select {
+  min-width: 0;
+  max-width: 180px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--window);
+}
+.send-button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
   border-radius: 8px;
   background: var(--ink);
   color: var(--window);
-  font-weight: 500;
+}
+.send-button:disabled { background: var(--current); color: var(--ink-3); }
+.notice {
+  margin: 8px 0 0;
   text-align: center;
+  color: var(--ink-3);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+@media (max-width: 840px) {
+  .chat-title, .messages, .compose-dock, .welcome { padding-inline: 20px; }
 }
